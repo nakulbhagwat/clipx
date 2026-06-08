@@ -5,7 +5,7 @@ import Sidebar from '../components/Sidebar.astro';
 import CategoryPills from '../components/CategoryPills.astro';
 import VideoGrid from '../components/VideoGrid.astro';
 import ShortsShelf from '../components/ShortsShelf.astro';
-import { searchXvideos } from '../lib/xvideos';
+import { getRandomFeed } from '../lib/scrapers';
 import { loadSiteConfig } from '../config/clipx';
 
 const config = await loadSiteConfig();
@@ -13,6 +13,7 @@ const { sectionHeadings, emptyState } = config;
 
 let mappedVideos: any[] = [];
 let trendingNextToken = '';
+let currentSource = '';
 let error = null;
 let currentTopic = '';
 
@@ -30,9 +31,10 @@ const topics = [
 
 try {
   currentTopic = topics[Math.floor(Math.random() * topics.length)];
-  const result = await searchXvideos(currentTopic, '0');
+  const result = await getRandomFeed(currentTopic);
   mappedVideos = result.videos || [];
   trendingNextToken = result.nextPageToken || '';
+  currentSource = result.source || 'xvideos';
 } catch (e: any) {
   error = e.message;
 }
@@ -68,7 +70,7 @@ const standardVideos = mappedVideos;
 		<div id="infinite-videos-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8 xl:gap-x-6 xl:gap-y-10 mt-12"></div>
 
 		{/* Infinite Scroll Trigger */}
-		<div id="infinite-scroll-trigger" class="w-full h-20 flex items-center justify-center mt-8" data-next-page={trendingNextToken} data-query={currentTopic}>
+		<div id="infinite-scroll-trigger" class="w-full h-20 flex items-center justify-center mt-8" data-next-page={trendingNextToken} data-query={currentTopic} data-source={currentSource}>
 			<svg class="w-8 h-8 text-[#e50914] animate-spin opacity-0 transition-opacity" id="infinite-scroll-spinner" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
 			</svg>
@@ -87,15 +89,16 @@ const standardVideos = mappedVideos;
 				const entry = entries[0];
 				if (entry.isIntersecting && !isLoading) {
 					const nextPageToken = trigger.dataset.nextPage;
-					const query = trigger.dataset.query || '';
-					
-					if (!nextPageToken) return;
+					const query = encodeURIComponent(trigger.dataset.query || '');
+					const source = trigger.dataset.source;
+          
+					if (!nextPageToken || !query) return;
 					
 					isLoading = true;
 					if (spinner) spinner.classList.remove('opacity-0');
 					
 					try {
-						const res = await fetch(`/api/feed?pageToken=${nextPageToken}&query=${encodeURIComponent(query)}`);
+						const res = await fetch(`/api/feed?query=${query}&pageToken=${nextPageToken}&source=${source}`);
 						if (res.ok) {
 							const html = await res.text();
 							const temp = document.createElement('div');

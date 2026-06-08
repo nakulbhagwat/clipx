@@ -16,13 +16,45 @@ let notFound = false;
 if (videoId?.startsWith('xv-')) {
   const rawId = videoId.replace('xv-', '');
   video = {
-    title: 'Playing Video', 
+    title: 'Xvideos Stream', 
     description: 'Enjoy this video stream.',
     videoUrl: `https://www.xvideos.com/embedframe/${rawId}`,
-    thumbnail: '',
-    author: { name: 'Xvideos', avatar: 'https://ui-avatars.com/api/?name=XV&background=random', isVerified: false, subscribers: 'Unknown' },
-    views: Math.floor(Math.random() * 5000000) + 10000,
-    timestamp: 'Recently'
+    thumbnail: '', author: { name: 'Xvideos', avatar: 'https://ui-avatars.com/api/?name=XV&background=random', isVerified: false }, views: 1000000, timestamp: 'Recently'
+  };
+} else if (videoId?.startsWith('xnxx-')) {
+  const rawId = videoId.replace('xnxx-', '');
+  video = {
+    title: 'XNXX Stream', description: 'Enjoy this video stream.',
+    videoUrl: `https://www.xnxx.com/embedframe/${rawId}`,
+    thumbnail: '', author: { name: 'XNXX', avatar: 'https://ui-avatars.com/api/?name=XN&background=random', isVerified: false }, views: 1000000, timestamp: 'Recently'
+  };
+} else if (videoId?.startsWith('redtube-')) {
+  const rawId = videoId.replace('redtube-', '');
+  video = {
+    title: 'Redtube Stream', description: 'Enjoy this video stream.',
+    videoUrl: `https://embed.redtube.com/?id=${rawId}`,
+    thumbnail: '', author: { name: 'Redtube', avatar: 'https://ui-avatars.com/api/?name=RT&background=random', isVerified: false }, views: 1000000, timestamp: 'Recently'
+  };
+} else if (videoId?.startsWith('xhamster-')) {
+  const rawId = videoId.replace('xhamster-', '');
+  video = {
+    title: 'xHamster Stream', description: 'Enjoy this video stream.',
+    videoUrl: `https://xhamster.com/embed/${rawId}`,
+    thumbnail: '', author: { name: 'xHamster', avatar: 'https://ui-avatars.com/api/?name=XH&background=random', isVerified: false }, views: 1000000, timestamp: 'Recently'
+  };
+} else if (videoId?.startsWith('yp-')) {
+  const rawId = videoId.replace('yp-', '');
+  video = {
+    title: 'YouPorn Stream', description: 'Enjoy this video stream.',
+    videoUrl: `https://www.youporn.com/embed/${rawId}`,
+    thumbnail: '', author: { name: 'YouPorn', avatar: 'https://ui-avatars.com/api/?name=YP&background=random', isVerified: false }, views: 1000000, timestamp: 'Recently'
+  };
+} else if (videoId?.startsWith('ph-')) {
+  const rawId = videoId.replace('ph-', '');
+  video = {
+    title: 'Pornhub Stream', description: 'Enjoy this video stream.',
+    videoUrl: `https://www.pornhub.com/embed/${rawId}`,
+    thumbnail: '', author: { name: 'Pornhub', avatar: 'https://ui-avatars.com/api/?name=PH&background=random', isVerified: false }, views: 1000000, timestamp: 'Recently'
   };
 } else if (videoId) {
   const data = await getVideoDetails(videoId);
@@ -38,17 +70,20 @@ const { comments } = siteConfig.watchData;
 // Fetch related videos
 let recommendedVideos: any[] = [];
 let initialNextPageToken = '';
+const adultPrefixes = ['xv-', 'xnxx-', 'redtube-', 'xhamster-', 'yp-', 'ph-'];
+const isAdult = videoId && adultPrefixes.some(prefix => videoId.startsWith(prefix));
+
 if (videoId && !notFound) {
-  if (!videoId.startsWith('xv-')) {
+  if (!isAdult) {
     const result = await getRelatedVideos(videoId, 12);
     recommendedVideos = result.videos;
     initialNextPageToken = result.nextPageToken || '';
   } else {
-    // For xvideos, we can just fetch another random page for the side panel using our scraper!
-    const { searchXvideos } = await import('../lib/xvideos');
+    // For adult videos, fetch another random page for the side panel using our central scraper!
+    const { getRandomFeed } = await import('../lib/scrapers');
     const topics = ['adult webseries 18+ hot', 'bold webseries hot scenes', 'steamy romantic hot scenes'];
     const randomTopic = topics[Math.floor(Math.random() * topics.length)];
-    const result = await searchXvideos(randomTopic, '1');
+    const result = await getRandomFeed(randomTopic);
     recommendedVideos = result.videos;
     initialNextPageToken = result.nextPageToken || '';
   }
@@ -95,7 +130,7 @@ if (videoId && !notFound) {
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                     allowfullscreen>
                   </iframe>
-                ) : video.videoUrl.includes('xvideos.com') ? (
+                ) : (video.videoUrl.includes('xvideos.com') || video.videoUrl.includes('xnxx.com') || video.videoUrl.includes('redtube.com') || video.videoUrl.includes('xhamster.com') || video.videoUrl.includes('youporn.com') || video.videoUrl.includes('pornhub.com')) ? (
                   <iframe 
                     class="w-full h-full border-none"
                     src={video.videoUrl} 

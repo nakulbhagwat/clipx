@@ -1,9 +1,11 @@
 ---
 export const partial = true;
-import { searchXvideos } from '../../lib/xvideos';
+import { getFeedBySource } from '../../lib/scrapers';
+import type { ScraperType } from '../../lib/scrapers';
 
 const pageToken = Astro.url.searchParams.get('pageToken');
 const query = Astro.url.searchParams.get('query');
+const source = (Astro.url.searchParams.get('source') as ScraperType) || 'xvideos';
 
 if (!pageToken || !query) {
   return new Response(null, { status: 400 });
@@ -12,7 +14,7 @@ if (!pageToken || !query) {
 let videos = [];
 let nextPageToken = null;
 
-const result = await searchXvideos(query, pageToken);
+const result = await getFeedBySource(source, query, pageToken);
 videos = result.videos || [];
 nextPageToken = result.nextPageToken || null;
 
