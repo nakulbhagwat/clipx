@@ -169,3 +169,28 @@ export async function getTrendingShorts(regionCode = 'IN', maxResults = 15) {
   const detailsData = await detailsResponse.json();
   return detailsData.items.map(mapVideoDetails).map((v: any) => ({ ...v, isShort: true }));
 }
+
+export async function getTrendingShortsPage(regionCode = 'IN', maxResults = 15, pageToken = '') {
+  if (!YOUTUBE_API_KEY) throw new Error('YouTube API Key is missing');
+
+  const pageTokenParam = pageToken ? `&pageToken=${pageToken}` : '';
+  const url = `${BASE_URL}/search?part=snippet&q=${encodeURIComponent('#shorts')}&type=video&videoDuration=short&regionCode=${regionCode}&maxResults=${maxResults}&key=${YOUTUBE_API_KEY}${pageTokenParam}`;
+  
+  const response = await fetch(url);
+  if (!response.ok) return { videos: [], nextPageToken: null };
+
+  const data = await response.json();
+  const nextPageToken = data.nextPageToken || null;
+  const videoIds = data.items.map((item: any) => item.id.videoId).join(',');
+  if (!videoIds) return { videos: [], nextPageToken };
+
+  const detailsUrl = `${BASE_URL}/videos?part=snippet,contentDetails,statistics&id=${videoIds}&key=${YOUTUBE_API_KEY}`;
+  const detailsResponse = await fetch(detailsUrl);
+  if (!detailsResponse.ok) return { videos: [], nextPageToken };
+
+  const detailsData = await detailsResponse.json();
+  return {
+    videos: detailsData.items.map(mapVideoDetails).map((v: any) => ({ ...v, isShort: true })),
+    nextPageToken
+  };
+}

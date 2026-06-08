@@ -3,6 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 import { getVideoDetails, getTrendingShorts } from '../../lib/youtube';
 import { loadSiteConfig } from '../../config/clipx';
 import { isYouTubeUrl, getYouTubeId } from '../../utils/youtube';
+import ShortsFeedItems from '../../components/ShortsFeedItems.astro';
 
 const { id } = Astro.params;
 
@@ -50,145 +51,7 @@ export const prerender = false;
 
     <!-- Scrollable Feed Container -->
     <div id="shorts-feed" class="relative z-10 w-full max-w-[450px] h-full sm:h-[calc(100vh-40px)] overflow-y-scroll snap-y snap-mandatory flex flex-col bg-black sm:rounded-[2rem] sm:border border-[#272727] shadow-2xl custom-scrollbar">
-      
-      {feedVideos.map((video, index) => {
-        const authorName = video.author.name;
-        const authorAvatar = video.author.avatar;
-        const authorHandle = video.author.handle || authorName.replace(/\s+/g, '');
-
-        return (
-          <!-- Individual Short Container -->
-          <div class="short-container relative w-full h-full shrink-0 snap-center bg-[#0f0f0f] overflow-hidden group">
-            
-            <!-- Blurred Backdrop -->
-            <div class="absolute inset-0 z-0 pointer-events-none">
-              {video.thumbnail && (
-                <img src={video.thumbnail} class="w-full h-full object-cover opacity-50 blur-[100px] scale-125" alt="" />
-              )}
-              <div class="absolute inset-0 bg-[#0f0f0f]/60"></div>
-            </div>
-
-            <!-- Video Player -->
-            {isYouTubeUrl(video.videoUrl) ? (
-              <iframe 
-                id={`yt-player-${index}`}
-                class="youtube-short absolute inset-0 w-full h-full object-cover z-0 pointer-events-none scale-[1.2] origin-center"
-                src={`https://www.youtube.com/embed/${getYouTubeId(video.videoUrl)}?enablejsapi=1&autoplay=0&loop=1&playlist=${getYouTubeId(video.videoUrl)}&controls=0&rel=0&showinfo=0&modestbranding=1&mute=0&playsinline=1`} 
-                title={video.title}
-                data-index={index}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowfullscreen>
-              </iframe>
-            ) : (
-              <video 
-                src={video.videoUrl} 
-                poster={video.thumbnail}
-                class="native-short absolute inset-0 w-full h-full object-cover z-0"
-                loop 
-                playsinline
-                webkit-playsinline
-                onclick="this.paused ? this.play() : this.pause()"
-              ></video>
-            )}
-
-            <!-- Overlay Gradients -->
-            <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/60 to-transparent pointer-events-none"></div>
-            <div class="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none"></div>
-
-            <!-- Play/Pause Indicator Overlay -->
-            <div class="play-indicator absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300 z-30">
-              <div class="w-20 h-20 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center">
-                <svg class="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              </div>
-            </div>
-
-            <!-- Right Action Bar -->
-            <div class="absolute right-4 bottom-24 flex flex-col items-center gap-6 z-20">
-              
-              <!-- Author Profile -->
-              <a href={authorHandle ? `/@${authorHandle}` : '#'} class="relative group">
-                <div class="w-12 h-12 rounded-full border-2 border-white overflow-hidden bg-[#272727]">
-                  <img src={authorAvatar} alt={authorName} class="w-full h-full object-cover" />
-                </div>
-                <div class="absolute -bottom-2 -right-1 w-6 h-6 bg-[var(--primary-from)] rounded-full flex items-center justify-center border-2 border-black group-hover:scale-110 transition-transform">
-                  <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                  </svg>
-                </div>
-              </a>
-
-              <!-- Like Button -->
-              <button class="flex flex-col items-center gap-1 group pointer-events-auto">
-                <div class="w-12 h-12 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm flex items-center justify-center transition-colors">
-                  <svg class="w-6 h-6 text-white group-hover:-translate-y-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.514C5.06 9.5 5 8.764 5 8V7a2 2 0 012-2h2.5" />
-                  </svg>
-                </div>
-                <span class="text-xs font-semibold text-white drop-shadow-md">Like</span>
-              </button>
-
-              <!-- Dislike Button -->
-              <button class="flex flex-col items-center gap-1 group pointer-events-auto">
-                <div class="w-12 h-12 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm flex items-center justify-center transition-colors">
-                  <svg class="w-6 h-6 text-white group-hover:translate-y-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.514c-.05.5-.06.1.236.06.1V17a2 2 0 01-2 2h-2.5" />
-                  </svg>
-                </div>
-                <span class="text-xs font-semibold text-white drop-shadow-md">Dislike</span>
-              </button>
-
-              <!-- Comments -->
-              <button class="flex flex-col items-center gap-1 group pointer-events-auto">
-                <div class="w-12 h-12 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm flex items-center justify-center transition-colors">
-                  <svg class="w-6 h-6 text-white group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                </div>
-                <span class="text-xs font-semibold text-white drop-shadow-md">1.2k</span>
-              </button>
-
-              <!-- Share -->
-              <button class="flex flex-col items-center gap-1 group pointer-events-auto">
-                <div class="w-12 h-12 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm flex items-center justify-center transition-colors">
-                  <svg class="w-6 h-6 text-white group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                  </svg>
-                </div>
-                <span class="text-xs font-semibold text-white drop-shadow-md">Share</span>
-              </button>
-            </div>
-
-            <!-- Bottom Info -->
-            <div class="absolute bottom-0 inset-x-0 p-4 pb-6 z-20 pointer-events-none">
-              <a href={authorHandle ? `/@${authorHandle}` : '#'} class="inline-flex items-center gap-2 mb-3 pointer-events-auto">
-                <span class="text-base font-semibold text-white drop-shadow-md">@{authorHandle}</span>
-                <button class="px-3 py-1 bg-[#e50914] text-white text-xs font-bold rounded-full ml-2 hover:bg-[#b91c1c] transition-colors shadow-lg">Subscribe</button>
-              </a>
-              <h1 class="text-sm font-medium text-white drop-shadow-md line-clamp-2 pr-16">{video.title}</h1>
-              {video.description && (
-                <p class="text-xs text-white/80 drop-shadow-md mt-2 line-clamp-1 pr-16">{video.description}</p>
-              )}
-              
-              <!-- Music Track info -->
-              <div class="flex items-center gap-2 mt-4 text-xs text-white drop-shadow-md font-medium">
-                <svg class="w-4 h-4 animate-spin" style="animation-duration: 3s;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                </svg>
-                <div class="overflow-hidden w-48 relative">
-                  <div class="whitespace-nowrap inline-block animate-[marquee_5s_linear_infinite]">
-                    Original Audio - {authorName} • Original Audio - {authorName}
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Click to Play/Pause Layer */}
-            <div class="absolute inset-0 z-10 cursor-pointer pointer-events-auto" data-action="toggle-play" data-index={index}></div>
-          </div>
-        );
-      })}
+      <ShortsFeedItems videos={feedVideos} startIndex={0} />
     </div>
   </main>
 
@@ -219,12 +82,22 @@ export const prerender = false;
     let players = {};
     let isApiReady = false;
     let observer;
+    let fetchingMore = false;
+    let nextPageToken = null;
+    let feedEndReached = false;
 
     window.onYouTubeIframeAPIReady = function() {
       isApiReady = true;
-      const iframes = document.querySelectorAll('.youtube-short');
+      initPlayers();
+      setupObserver();
+      setupClickListeners();
+    };
+
+    function initPlayers() {
+      const iframes = document.querySelectorAll('.youtube-short:not([data-initialized="true"])');
       iframes.forEach((iframe) => {
         const index = iframe.getAttribute('data-index');
+        iframe.setAttribute('data-initialized', 'true');
         players[index] = new YT.Player(iframe, {
            events: {
              'onReady': (event) => {
@@ -236,36 +109,117 @@ export const prerender = false;
            }
         });
       });
-      
-      setupObserver();
-      setupClickListeners();
-    };
+    }
 
     function setupObserver() {
-      const containers = document.querySelectorAll('.short-container');
+      const feed = document.getElementById('shorts-feed');
+      
       observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-          const iframe = entry.target.querySelector('.youtube-short');
-          if (iframe) {
-            const index = iframe.getAttribute('data-index');
-            const player = players[index];
-            if (player && typeof player.playVideo === 'function') {
-              if (entry.isIntersecting) {
+          const container = entry.target;
+          const iframe = container.querySelector('.youtube-short');
+          
+          if (entry.isIntersecting) {
+            // Update the URL to the current video
+            if (iframe) {
+                const videoId = iframe.getAttribute('src').match(/embed\/([^?]+)/)?.[1];
+                if (videoId) {
+                    history.replaceState(null, '', `/shorts/${videoId}`);
+                }
+            }
+            
+            // Play video
+            if (iframe) {
+              const index = iframe.getAttribute('data-index');
+              const player = players[index];
+              if (player && typeof player.playVideo === 'function') {
                 player.playVideo();
-              } else {
+              }
+            } else {
+                const nativeVideo = container.querySelector('.native-short');
+                if (nativeVideo) nativeVideo.play();
+            }
+
+            // Check if we need to load more
+            const allContainers = Array.from(document.querySelectorAll('.short-container'));
+            const currentIndex = allContainers.indexOf(container);
+            
+            if (!fetchingMore && !feedEndReached && currentIndex >= allContainers.length - 5) {
+                fetchMoreShorts();
+            }
+          } else {
+            // Pause video
+            if (iframe) {
+              const index = iframe.getAttribute('data-index');
+              const player = players[index];
+              if (player && typeof player.pauseVideo === 'function') {
                 player.pauseVideo();
               }
+            } else {
+                const nativeVideo = container.querySelector('.native-short');
+                if (nativeVideo) nativeVideo.pause();
             }
           }
         });
-      }, { threshold: 0.6 }); // Play when 60% of video is visible
+      }, { threshold: 0.6 });
 
-      containers.forEach(container => observer.observe(container));
+      observeNewContainers();
+    }
+
+    function observeNewContainers() {
+      const unobservedContainers = document.querySelectorAll('.short-container:not([data-observed="true"])');
+      unobservedContainers.forEach(container => {
+          container.setAttribute('data-observed', 'true');
+          observer.observe(container);
+      });
+    }
+
+    async function fetchMoreShorts() {
+      fetchingMore = true;
+      try {
+        const feed = document.getElementById('shorts-feed');
+        const currentIndexOffset = document.querySelectorAll('.short-container').length;
+        
+        const res = await fetch(`/api/shorts?pageToken=${nextPageToken || ''}&startIndex=${currentIndexOffset}`);
+        if (!res.ok) throw new Error('Failed to fetch');
+        
+        const html = await res.text();
+        
+        if (html.trim()) {
+           const tempDiv = document.createElement('div');
+           tempDiv.innerHTML = html;
+           
+           const tokenContainer = tempDiv.querySelector('[data-next-page-token]');
+           if (tokenContainer) {
+             nextPageToken = tokenContainer.getAttribute('data-next-page-token');
+             if (!nextPageToken) feedEndReached = true;
+             
+             // Append new children
+             while (tokenContainer.firstChild) {
+                feed.appendChild(tokenContainer.firstChild);
+             }
+             
+             if (isApiReady) {
+               initPlayers();
+               setupClickListeners();
+               observeNewContainers();
+             }
+           } else {
+             feedEndReached = true;
+           }
+        } else {
+           feedEndReached = true;
+        }
+      } catch (e) {
+        console.error("Failed to fetch more shorts", e);
+      }
+      fetchingMore = false;
     }
 
     function setupClickListeners() {
-      const overlays = document.querySelectorAll('[data-action="toggle-play"]');
+      const overlays = document.querySelectorAll('[data-action="toggle-play"]:not([data-initialized="true"])');
       overlays.forEach(overlay => {
+        overlay.setAttribute('data-initialized', 'true');
         overlay.addEventListener('click', () => {
           const index = overlay.getAttribute('data-index');
           const player = players[index];

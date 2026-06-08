@@ -1,0 +1,18 @@
+---
+import { getTrendingShortsPage } from '../../lib/youtube';
+import ShortsFeedItems from '../../components/ShortsFeedItems.astro';
+
+// Enable partial rendering (return just the component HTML, not a full document)
+export const partial = true;
+
+const pageToken = Astro.url.searchParams.get('pageToken') || '';
+const startIndex = parseInt(Astro.url.searchParams.get('startIndex') || '0', 10);
+
+const data = await getTrendingShortsPage('IN', 15, pageToken);
+---
+
+{data.videos && data.videos.length > 0 && (
+  <div data-next-page-token={data.nextPageToken || ''}>
+    <ShortsFeedItems videos={data.videos} startIndex={startIndex} />
+  </div>
+)}
