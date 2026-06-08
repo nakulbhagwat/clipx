@@ -1,5 +1,3 @@
-import { formatNumber, calculateTimestamp } from './utils';
-
 export async function searchEporner(query: string, page: number = 1): Promise<any[]> {
   const url = `https://www.eporner.com/api/v2/video/search/?query=${encodeURIComponent(query)}&per_page=20&page=${page}&format=json`;
 
@@ -21,7 +19,7 @@ export async function searchEporner(query: string, page: number = 1): Promise<an
         duration: v.length_min || '',
         url: v.url,
         views: views,
-        timestamp: calculateTimestamp(v.added) || 'Recently',
+        timestamp: v.added || 'Recently',
         author: {
           name: 'Eporner',
           url: 'https://www.eporner.com/',

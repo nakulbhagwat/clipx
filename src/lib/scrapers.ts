@@ -26,7 +26,7 @@ export async function getFeedBySource(source: ScraperType, query: string, pageTo
 
 // Randomly selects one of the scrapers
 export async function getRandomFeed(query: string) {
-  const sources: ScraperType[] = ['eporner', 'redtube', 'xhamster', 'youporn', 'pornhub'];
+  const sources: ScraperType[] = ['eporner', 'redtube', 'pornhub'];
   const randomSource = sources[Math.floor(Math.random() * sources.length)];
   
   const result = await getFeedBySource(randomSource, query, '1');
@@ -52,7 +52,8 @@ function shuffle<T>(array: T[]): T[] {
  * If a source fails, it is silently skipped so the feed still works.
  */
 export async function getMixedFeed(query: string, pageToken = '1') {
-  const sources: ScraperType[] = ['eporner', 'redtube', 'xhamster', 'youporn', 'pornhub'];
+  // Only use sources that are known to work on Vercel without Cloudflare blocking
+  const sources: ScraperType[] = ['eporner', 'redtube', 'pornhub'];
 
   const results = await Promise.allSettled(
     sources.map(source => getFeedBySource(source, query, pageToken))
