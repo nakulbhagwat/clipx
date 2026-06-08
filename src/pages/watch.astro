@@ -13,7 +13,18 @@ const videoId = Astro.url.searchParams.get('v');
 let video = siteConfig.watchData.video;
 let notFound = false;
 
-if (videoId) {
+if (videoId?.startsWith('xv-')) {
+  const rawId = videoId.replace('xv-', '');
+  video = {
+    title: 'Playing Video', 
+    description: 'Enjoy this video stream.',
+    videoUrl: `https://www.xvideos.com/embedframe/${rawId}`,
+    thumbnail: '',
+    author: { name: 'Xvideos', avatar: 'https://ui-avatars.com/api/?name=XV&background=random', isVerified: false, subscribers: 'Unknown' },
+    views: Math.floor(Math.random() * 5000000) + 10000,
+    timestamp: 'Recently'
+  };
+} else if (videoId) {
   const data = await getVideoDetails(videoId);
   if (data) {
     video = data;
@@ -24,13 +35,23 @@ if (videoId) {
 
 const { comments } = siteConfig.watchData;
 
-// Fetch related videos from YouTube
+// Fetch related videos
 let recommendedVideos: any[] = [];
 let initialNextPageToken = '';
 if (videoId && !notFound) {
-  const result = await getRelatedVideos(videoId, 12);
-  recommendedVideos = result.videos;
-  initialNextPageToken = result.nextPageToken || '';
+  if (!videoId.startsWith('xv-')) {
+    const result = await getRelatedVideos(videoId, 12);
+    recommendedVideos = result.videos;
+    initialNextPageToken = result.nextPageToken || '';
+  } else {
+    // For xvideos, we can just fetch another random page for the side panel using our scraper!
+    const { searchXvideos } = await import('../lib/xvideos');
+    const topics = ['adult webseries 18+ hot', 'bold webseries hot scenes', 'steamy romantic hot scenes'];
+    const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+    const result = await searchXvideos(randomTopic, '1');
+    recommendedVideos = result.videos;
+    initialNextPageToken = result.nextPageToken || '';
+  }
 }
 ---
 
@@ -72,6 +93,13 @@ if (videoId && !notFound) {
                     src={`https://www.youtube.com/embed/${getYouTubeId(video.videoUrl)}?autoplay=1&rel=0&playsinline=1`} 
                     title={video.title}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                    allowfullscreen>
+                  </iframe>
+                ) : video.videoUrl.includes('xvideos.com') ? (
+                  <iframe 
+                    class="w-full h-full border-none"
+                    src={video.videoUrl} 
+                    title={video.title}
                     allowfullscreen>
                   </iframe>
                 ) : (

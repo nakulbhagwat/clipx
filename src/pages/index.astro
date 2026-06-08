@@ -5,7 +5,7 @@ import Sidebar from '../components/Sidebar.astro';
 import CategoryPills from '../components/CategoryPills.astro';
 import VideoGrid from '../components/VideoGrid.astro';
 import ShortsShelf from '../components/ShortsShelf.astro';
-import { getTrendingShorts, searchVideosPage } from '../lib/youtube';
+import { searchXvideos } from '../lib/xvideos';
 import { loadSiteConfig } from '../config/clipx';
 
 const config = await loadSiteConfig();
@@ -13,7 +13,6 @@ const { sectionHeadings, emptyState } = config;
 
 let mappedVideos: any[] = [];
 let trendingNextToken = '';
-let trendingShorts: any[] = [];
 let error = null;
 let currentTopic = '';
 
@@ -31,19 +30,14 @@ const topics = [
 
 try {
   currentTopic = topics[Math.floor(Math.random() * topics.length)];
-  const result = await searchVideosPage(currentTopic, 48);
+  const result = await searchXvideos(currentTopic, '0');
   mappedVideos = result.videos || [];
   trendingNextToken = result.nextPageToken || '';
-  
-  const fetchedShorts = await getTrendingShorts('IN', 15);
-  // Shuffle shorts to add randomness on refresh
-  trendingShorts = fetchedShorts.sort(() => Math.random() - 0.5);
 } catch (e: any) {
   error = e.message;
 }
 
-const standardVideos = mappedVideos.filter(v => !v.isShort);
-const shortsVideos = trendingShorts.length > 0 ? trendingShorts : mappedVideos.filter(v => v.isShort);
+const standardVideos = mappedVideos;
 ---
 
 <Layout 
@@ -62,7 +56,7 @@ const shortsVideos = trendingShorts.length > 0 ? trendingShorts : mappedVideos.f
 
 		{error && (
 			<div class="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6">
-				<p class="text-red-400 font-medium text-sm">Database connection not found. Falling back to siteConfig data.</p>
+				<p class="text-red-400 font-medium text-sm">Error loading feed. {error}</p>
 			</div>
 		)}
 
@@ -70,17 +64,7 @@ const shortsVideos = trendingShorts.length > 0 ? trendingShorts : mappedVideos.f
 			<VideoGrid videos={standardVideos} />
 		) : null}
 
-		{/* Shorts shelf */}
-		<div class="mt-12">
-			<!-- Shorts Shelf -->
-			{shortsVideos.length > 0 ? (
-				<ShortsShelf shorts={shortsVideos} heading={sectionHeadings.shorts} localization={config.branding.localization} />
-			) : (
-				<ShortsShelf heading={sectionHeadings.shorts} localization={config.branding.localization} />
-			)}
-		</div>
-
-		{/* Endless feed container below shorts shelf */}
+		{/* Endless feed container */}
 		<div id="infinite-videos-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8 xl:gap-x-6 xl:gap-y-10 mt-12"></div>
 
 		{/* Infinite Scroll Trigger */}

@@ -1,6 +1,6 @@
 ---
 export const partial = true;
-import { searchVideosPage } from '../../lib/youtube';
+import { searchXvideos } from '../../lib/xvideos';
 
 const pageToken = Astro.url.searchParams.get('pageToken');
 const query = Astro.url.searchParams.get('query');
@@ -12,11 +12,11 @@ if (!pageToken || !query) {
 let videos = [];
 let nextPageToken = null;
 
-const result = await searchVideosPage(query, 24, pageToken);
+const result = await searchXvideos(query, pageToken);
 videos = result.videos || [];
 nextPageToken = result.nextPageToken || null;
 
-const standardVideos = videos.filter((v: any) => !v.isShort);
+const standardVideos = videos;
 ---
 
 {standardVideos.map((rec: any) => (
