@@ -13,6 +13,7 @@ const videoId = Astro.url.searchParams.get('v');
 let video = siteConfig.watchData.video;
 let notFound = false;
 let sourceUrl = '';
+let embedUrl = '';
 let directVideoUrl = '';
 let isHLS = false;
 
@@ -31,6 +32,27 @@ if (videoId) {
   
   if (matchedPrefix) {
     const source = sourceMap[matchedPrefix];
+    const rawId = videoId.replace(matchedPrefix, '');
+    
+    if (matchedPrefix === 'xv-') {
+      embedUrl = `https://www.xvideos.com/embedframe/${rawId}`;
+      sourceUrl = `https://www.xvideos.com/video.${rawId}/a`;
+    } else if (matchedPrefix === 'xnxx-') {
+      embedUrl = `https://www.xnxx.com/embedframe/${rawId}`;
+      sourceUrl = `https://www.xnxx.com/video-${rawId}/a`;
+    } else if (matchedPrefix === 'redtube-') {
+      embedUrl = `https://embed.redtube.com/?id=${rawId}`;
+      sourceUrl = `https://www.redtube.com/${rawId}`;
+    } else if (matchedPrefix === 'xhamster-') {
+      embedUrl = `https://xhamster.com/embed/${rawId}`;
+      sourceUrl = `https://xhamster.com/videos/${rawId}`;
+    } else if (matchedPrefix === 'yp-') {
+      embedUrl = `https://www.youporn.com/embed/${rawId}`;
+      sourceUrl = `https://www.youporn.com/watch/${rawId}/`;
+    } else if (matchedPrefix === 'ph-') {
+      embedUrl = `https://www.pornhub.com/embed/${rawId}`;
+      sourceUrl = `https://www.pornhub.com/view_video.php?viewkey=${rawId}`;
+    }
     
     // Extract the actual direct MP4/HLS video URL from the source page
     const extracted = await extractVideoUrl(videoId);
@@ -48,10 +70,10 @@ if (videoId) {
         timestamp: 'Recently'
       };
     } else {
-      // Extraction failed — show not found
+      // Extraction failed — show fallback embed
       video = {
         title: 'Video Stream',
-        description: 'Could not extract video.',
+        description: 'Direct extraction failed. Watching via embedded player.',
         videoUrl: '',
         thumbnail: '',
         author: { name: source.name, avatar: source.avatar, isVerified: false },
@@ -124,13 +146,27 @@ if (videoId && !notFound) {
                 >
                   Your browser does not support the video tag.
                 </video>
+            ) : embedUrl ? (
+                <iframe 
+                  src={embedUrl} 
+                  class="w-full h-full border-0"
+                  allowfullscreen
+                ></iframe>
             ) : (
               <div class="absolute inset-0 flex flex-col items-center justify-center bg-[#1a1a1a]">
                 <svg class="w-16 h-16 text-[#e50914] mb-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z"/>
                 </svg>
                 <p class="text-white font-bold text-lg mb-2">Could not load video</p>
-                <p class="text-[#aaa] text-sm">The video stream could not be extracted from the source.</p>
+                <p class="text-[#aaa] text-sm mb-4">The video stream could not be extracted from the source.</p>
+                {sourceUrl && (
+                  <a href={sourceUrl} target="_blank" rel="noopener noreferrer" class="px-6 py-2.5 bg-[#e50914] hover:bg-[#b91c1c] text-white rounded-full font-bold text-sm transition-colors shadow-lg flex items-center gap-2">
+                    Watch on Source
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                )}
               </div>
             )}
             </div>
