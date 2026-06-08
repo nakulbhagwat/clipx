@@ -202,11 +202,7 @@ export const prerender = false;
             <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">"Subscribers" Text</label>
             <input type="text" data-field="branding.localization.subscribers" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition" />
           </div>
-          <div>
-            <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">"SHORTS" Badge Text</label>
-            <input type="text" data-field="branding.localization.shortsBadge" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition" />
-          </div>
-        </div>
+
       </section>
 
       <!-- ═══ CATEGORIES ═══ -->
@@ -265,14 +261,10 @@ export const prerender = false;
             <p class="text-xs text-[#666]">Labels for content sections</p>
           </div>
         </div>
-        <div class="p-5 grid grid-cols-3 gap-4">
+        <div class="p-5 grid grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Recommended</label>
             <input type="text" data-field="section_headings.recommended" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition" />
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Shorts</label>
-            <input type="text" data-field="section_headings.shorts" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition" />
           </div>
           <div>
             <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Trending</label>
@@ -354,13 +346,13 @@ export const prerender = false;
         copyright: '© 2025 ClipX',
         seo: { title: 'ClipX - Video Sharing Platform', description: 'The best place to watch and share videos.' },
         theme: { primaryFrom: '#db2777', primaryTo: '#f43f5e' },
-        localization: { views: 'views', ago: 'ago', subscribers: 'subscribers', shortsBadge: 'SHORTS' }
+        localization: { views: 'views', ago: 'ago', subscribers: 'subscribers' }
       },
       sidebar: [
         {
           items: [
             { icon: 'home', label: 'Home', href: '/', active: true },
-            { icon: 'shorts', label: 'Shorts', href: '/shorts' },
+
             { icon: 'subscriptions', label: 'Subscriptions', href: '/subscriptions' },
           ],
         },
@@ -409,7 +401,7 @@ export const prerender = false;
         { label: 'Cooking', active: false },
         { label: 'Sports', active: false },
       ],
-      section_headings: { recommended: 'Recommended', shorts: 'Shorts', trending: 'Trending' },
+      section_headings: { recommended: 'Recommended', trending: 'Trending' },
       empty_state: { title: 'No videos available', description: 'Check back later for new content from your favorite creators.' },
       sidebar_footer: ['About', 'Press', 'Copyright', 'Contact us', 'Creators', 'Advertise', 'Developers', 'Terms', 'Privacy', 'Policy & Safety'],
     };

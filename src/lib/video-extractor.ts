@@ -9,8 +9,6 @@ const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
  */
 export async function extractVideoUrl(videoId: string): Promise<{ videoUrl: string; title: string; thumbnail: string } | null> {
   try {
-    if (videoId.startsWith('xv-')) return await extractXvideos(videoId.replace('xv-', ''));
-    if (videoId.startsWith('xnxx-')) return await extractXnxx(videoId.replace('xnxx-', ''));
     if (videoId.startsWith('redtube-')) return await extractRedtube(videoId.replace('redtube-', ''));
     if (videoId.startsWith('xhamster-')) return await extractXhamster(videoId.replace('xhamster-', ''));
     if (videoId.startsWith('yp-')) return await extractYouporn(videoId.replace('yp-', ''));
@@ -20,47 +18,6 @@ export async function extractVideoUrl(videoId: string): Promise<{ videoUrl: stri
     console.error('Video extraction failed:', e);
     return null;
   }
-}
-
-// ========== XVIDEOS ==========
-async function extractXvideos(numericId: string): Promise<{ videoUrl: string; title: string; thumbnail: string } | null> {
-  // Xvideos video pages contain: html5player.setVideoUrlHigh('...')
-  const url = `https://www.xvideos.com/video.${numericId}/a`;
-  const html = await fetchPage(url);
-  const $ = load(html);
-
-  const title = $('title').text().replace(' - XVIDEOS.COM', '').trim() || 'Video';
-  const thumbnail = extractRegex(html, /html5player\.setThumbUrl169\('([^']+)'\)/) || '';
-  
-  // Try HLS first (best quality), then high, then low
-  const hls = extractRegex(html, /html5player\.setVideoHLS\('([^']+)'\)/);
-  const high = extractRegex(html, /html5player\.setVideoUrlHigh\('([^']+)'\)/);
-  const low = extractRegex(html, /html5player\.setVideoUrlLow\('([^']+)'\)/);
-  
-  const videoUrl = hls || high || low;
-  if (!videoUrl) return null;
-  
-  return { videoUrl, title, thumbnail };
-}
-
-// ========== XNXX ==========
-async function extractXnxx(numericId: string): Promise<{ videoUrl: string; title: string; thumbnail: string } | null> {
-  // XNXX is a sister site of Xvideos, same HTML structure
-  const url = `https://www.xnxx.com/video-${numericId}/a`;
-  const html = await fetchPage(url);
-  const $ = load(html);
-
-  const title = $('title').text().replace(' - XNXX.COM', '').trim() || 'Video';
-  const thumbnail = extractRegex(html, /html5player\.setThumbUrl169\('([^']+)'\)/) || '';
-  
-  const hls = extractRegex(html, /html5player\.setVideoHLS\('([^']+)'\)/);
-  const high = extractRegex(html, /html5player\.setVideoUrlHigh\('([^']+)'\)/);
-  const low = extractRegex(html, /html5player\.setVideoUrlLow\('([^']+)'\)/);
-  
-  const videoUrl = hls || high || low;
-  if (!videoUrl) return null;
-  
-  return { videoUrl, title, thumbnail };
 }
 
 // ========== REDTUBE ==========

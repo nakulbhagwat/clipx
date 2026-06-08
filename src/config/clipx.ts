@@ -54,14 +54,12 @@ export const siteConfig = {
       views: 'views',
       ago: 'ago',
       subscribers: 'subscribers',
-      shortsBadge: 'SHORTS',
     }
   },
   sidebar: [
     {
       items: [
         { icon: 'home', label: 'Home', href: '/', active: true },
-        { icon: 'shorts', label: 'Shorts', href: '/shorts' },
         { icon: 'subscriptions', label: 'Subscriptions', href: '/subscriptions' },
       ],
     },
@@ -122,7 +120,6 @@ export const siteConfig = {
   ],
   sectionHeadings: {
     recommended: 'Recommended',
-    shorts: 'Shorts',
     trending: 'Trending',
   },
   emptyState: {
