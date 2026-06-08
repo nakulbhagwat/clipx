@@ -19,8 +19,7 @@ let isHLS = false;
 
 // Map prefixes to source info
 const sourceMap: Record<string, { name: string; avatar: string }> = {
-  'xv-': { name: 'Xvideos', avatar: 'https://ui-avatars.com/api/?name=XV&background=random' },
-  'xnxx-': { name: 'XNXX', avatar: 'https://ui-avatars.com/api/?name=XN&background=random' },
+  'ep-': { name: 'Eporner', avatar: 'https://ui-avatars.com/api/?name=EP&background=random' },
   'redtube-': { name: 'Redtube', avatar: 'https://ui-avatars.com/api/?name=RT&background=random' },
   'xhamster-': { name: 'xHamster', avatar: 'https://ui-avatars.com/api/?name=XH&background=random' },
   'yp-': { name: 'YouPorn', avatar: 'https://ui-avatars.com/api/?name=YP&background=random' },
@@ -34,24 +33,21 @@ if (videoId) {
     const source = sourceMap[matchedPrefix];
     const rawId = videoId.replace(matchedPrefix, '');
     
-    if (matchedPrefix === 'xv-') {
-      embedUrl = `https://www.xvideos.com/embedframe/${rawId}`;
-      sourceUrl = `https://www.xvideos.com/video.${rawId}/a`;
-    } else if (matchedPrefix === 'xnxx-') {
-      embedUrl = `https://www.xnxx.com/embedframe/${rawId}`;
-      sourceUrl = `https://www.xnxx.com/video-${rawId}/a`;
+    if (matchedPrefix === 'ep-') {
+      embedUrl = `https://www.eporner.com/embed/${rawId}/`;
+      sourceUrl = `https://www.eporner.com/video-${rawId}/`;
     } else if (matchedPrefix === 'redtube-') {
       embedUrl = `https://embed.redtube.com/?id=${rawId}`;
       sourceUrl = `https://www.redtube.com/${rawId}`;
     } else if (matchedPrefix === 'xhamster-') {
-      embedUrl = `https://xhamster.com/embed/${rawId}`;
-      sourceUrl = `https://xhamster.com/videos/${rawId}`;
+      embedUrl = `https://xhamster.desi/embed/${rawId}`;
+      sourceUrl = `https://xhamster.desi/videos/${rawId}`;
     } else if (matchedPrefix === 'yp-') {
       embedUrl = `https://www.youporn.com/embed/${rawId}`;
       sourceUrl = `https://www.youporn.com/watch/${rawId}/`;
     } else if (matchedPrefix === 'ph-') {
-      embedUrl = `https://www.pornhub.com/embed/${rawId}`;
-      sourceUrl = `https://www.pornhub.com/view_video.php?viewkey=${rawId}`;
+      embedUrl = `https://www.pornhub.org/embed/${rawId}`;
+      sourceUrl = `https://www.pornhub.org/view_video.php?viewkey=${rawId}`;
     }
     
     // Extract the actual direct MP4/HLS video URL from the source page
