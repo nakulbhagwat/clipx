@@ -1,0 +1,201 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { supabaseServer } from '../../lib/supabase';
+
+const supabase = supabaseServer(Astro.cookies);
+const { data: { session } } = await supabase.auth.getSession();
+
+if (!session) {
+  return Astro.redirect('/login');
+}
+
+const { data: profile } = await supabase
+  .from('channels')
+  .select('*')
+  .eq('id', session.user.id)
+  .single();
+
+export const prerender = false;
+---
+
+<Layout title={`Customization - ${profile?.channel_name || 'Studio'}`} pageType="watch">
+  <header class="sticky top-0 z-50 h-14 bg-[#0f0f0f] flex items-center px-6 border-b border-[#272727]">
+    <a href="/" class="flex items-center gap-1.5 select-none shrink-0 group" aria-label="ClipX Home">
+      <svg class="w-10 h-10 transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_0_12px_rgba(229,9,20,0.6)]" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5 8.35C10.5 5.86 13.2 4.3 15.36 5.54L28.12 12.89C30.28 14.13 30.28 17.25 28.12 18.49L15.36 25.84C13.2 27.08 10.5 25.52 10.5 23.03V8.35Z" stroke="url(#outerGradStudioSet)" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M15 12.35C15 10.86 16.62 9.93 17.91 10.67L25.57 15.09C26.86 15.83 26.86 17.71 25.57 18.45L17.91 22.87C16.62 23.61 15 22.68 15 21.19V12.35Z" fill="url(#innerGradStudioSet)"/>
+        <defs>
+          <linearGradient id="outerGradStudioSet" x1="10" y1="4" x2="29" y2="26" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#ffffff" />
+            <stop offset="40%" stop-color="#e50914" />
+            <stop offset="100%" stop-color="#3b0000" />
+          </linearGradient>
+          <linearGradient id="innerGradStudioSet" x1="15" y1="10" x2="26" y2="23" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#ff4d4d" />
+            <stop offset="100%" stop-color="#b91c1c" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <span class="font-black italic text-[30px] leading-none tracking-tight ml-0.5 flex items-baseline select-none">
+        <span class="text-white drop-shadow-md">Clip</span><span class="text-[#e50914] drop-shadow-[0_0_8px_rgba(229,9,20,0.6)]">X</span>
+      </span>
+    </a>
+    <div class="mx-4 h-6 w-px bg-[#3d3d3d]"></div>
+    <h1 class="text-lg font-semibold text-[#f1f1f1]">Creator Studio</h1>
+    <nav class="flex items-center gap-1 ml-6">
+      <a href="/studio" class="px-4 py-1.5 rounded-lg text-sm font-medium text-[#aaa] hover:bg-[#272727] hover:text-[#f1f1f1] transition-colors">Content</a>
+      <a href="/studio/settings" class="px-4 py-1.5 rounded-lg text-sm font-medium bg-[#272727] text-[#f1f1f1]">Customization</a>
+    </nav>
+    <div class="flex-1"></div>
+    
+    <div class="flex items-center gap-4">
+      <a href={`/@${profile?.handle}`} class="text-sm text-[#aaa] hover:text-[#f1f1f1] transition-colors">View Channel</a>
+      <img src={profile?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=fallback'} alt="Avatar" class="w-8 h-8 rounded-full border border-[#3d3d3d]" />
+    </div>
+  </header>
+
+  <main class="max-w-[800px] mx-auto px-6 py-12">
+    <div class="mb-8 flex items-center justify-between">
+      <div>
+        <h2 class="text-2xl font-bold text-[#f1f1f1]">Channel customization</h2>
+        <p class="text-[#aaa] text-sm mt-1">Update your profile to attract viewers.</p>
+      </div>
+    </div>
+
+    <div class="bg-[#1a1a1a] border border-[#272727] rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+      <form id="settings-form" class="space-y-8 relative z-10">
+        
+        <!-- Profile Picture -->
+        <div class="flex items-start gap-8 border-b border-[#272727] pb-8">
+          <div class="w-1/3">
+            <h3 class="text-[#f1f1f1] font-medium">Picture</h3>
+            <p class="text-[#aaa] text-xs mt-1">Your profile picture will appear where your channel is presented on ClipX, like next to your videos and comments.</p>
+          </div>
+          <div class="w-2/3 flex items-center gap-6">
+            <div class="w-24 h-24 rounded-full bg-[#272727] overflow-hidden shrink-0 relative group">
+              <img id="avatar-preview" src={profile?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=fallback'} class="w-full h-full object-cover" />
+              <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer pointer-events-none">
+                <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+              </div>
+              <input type="file" id="file-avatar" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+            </div>
+            <div class="flex-1">
+              <p class="text-xs text-[#aaa] mb-2">It's recommended to use a picture that's at least 98 x 98 pixels and 4MB or less. Use a PNG or GIF (no animations) file.</p>
+              <input type="hidden" id="form-avatar" value={profile?.avatar_url} />
+            </div>
+          </div>
+        </div>
+
+        <!-- Basic Info -->
+        <div class="flex items-start gap-8">
+          <div class="w-1/3">
+            <h3 class="text-[#f1f1f1] font-medium">Basic info</h3>
+            <p class="text-[#aaa] text-xs mt-1">Choose your channel name and handle. You can change your channel name twice in 14 days.</p>
+          </div>
+          <div class="w-2/3 space-y-6">
+            <div>
+              <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-2">Name</label>
+              <input type="text" id="form-name" value={profile?.channel_name} required class="w-full px-4 py-3 bg-[#0f0f0f] border border-[#3d3d3d] rounded-xl text-[#f1f1f1] focus:outline-none focus:border-[var(--primary-from)] focus:ring-1 focus:ring-[var(--primary-from)] transition" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-2">Handle</label>
+              <div class="relative">
+                <span class="absolute left-4 top-3.5 text-[#666] font-medium">@</span>
+                <input type="text" id="form-handle" value={profile?.handle} required class="w-full pl-9 pr-4 py-3 bg-[#0f0f0f] border border-[#3d3d3d] rounded-xl text-[#f1f1f1] focus:outline-none focus:border-[var(--primary-from)] focus:ring-1 focus:ring-[var(--primary-from)] transition" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-2">Description</label>
+              <textarea id="form-description" rows="4" class="w-full px-4 py-3 bg-[#0f0f0f] border border-[#3d3d3d] rounded-xl text-[#f1f1f1] focus:outline-none focus:border-[var(--primary-from)] focus:ring-1 focus:ring-[var(--primary-from)] transition resize-none" placeholder="Tell viewers about your channel. Your description will appear in the About section of your channel...">{profile?.description || ''}</textarea>
+            </div>
+          </div>
+        </div>
+
+        <div id="error-message" class="hidden p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mt-4"></div>
+
+        <div class="pt-6 border-t border-[#272727] flex justify-end">
+          <button type="submit" id="btn-save" class="px-8 py-3 bg-gradient-to-r from-[var(--primary-from)] to-[var(--primary-to)] text-white rounded-xl font-semibold hover:opacity-90 transition shadow-lg shadow-[var(--primary-from)]/25 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+            Publish Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    import { supabase } from '../../lib/supabase';
+
+    const form = document.getElementById('settings-form') as HTMLFormElement;
+    const btnSave = document.getElementById('btn-save') as HTMLButtonElement;
+    const errBox = document.getElementById('error-message') as HTMLDivElement;
+
+    const fileAvatar = document.getElementById('file-avatar') as HTMLInputElement;
+    const formAvatarUrl = document.getElementById('form-avatar') as HTMLInputElement;
+    const avatarPreview = document.getElementById('avatar-preview') as HTMLImageElement;
+
+    // Handle Avatar File Selection
+    fileAvatar.addEventListener('change', async () => {
+      const file = fileAvatar.files?.[0];
+      if (!file) return;
+
+      const oldSrc = avatarPreview.src;
+      avatarPreview.style.opacity = '0.5';
+
+      try {
+        const ext = file.name.split('.').pop();
+        const fileName = `avatar_${Math.random().toString(36).substring(2, 10)}.${ext}`;
+        const { data, error } = await supabase.storage.from('thumbnails').upload(fileName, file, { cacheControl: '3600', upsert: false });
+        if (error) throw error;
+
+        const { data: urlData } = supabase.storage.from('thumbnails').getPublicUrl(data.path);
+        
+        formAvatarUrl.value = urlData.publicUrl;
+        avatarPreview.src = urlData.publicUrl;
+      } catch (err: any) {
+        alert(`Avatar upload failed: ${err.message}`);
+        avatarPreview.src = oldSrc;
+      } finally {
+        avatarPreview.style.opacity = '1';
+      }
+    });
+
+    const handleInput = document.getElementById('form-handle') as HTMLInputElement;
+    handleInput.addEventListener('input', (e) => {
+      let val = (e.target as HTMLInputElement).value;
+      val = val.toLowerCase().replace(/[^a-z0-9_]/g, '');
+      (e.target as HTMLInputElement).value = val;
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const channel_name = (document.getElementById('form-name') as HTMLInputElement).value;
+      const handle = handleInput.value;
+      const description = (document.getElementById('form-description') as HTMLTextAreaElement).value;
+      const avatar_url = formAvatarUrl.value;
+
+      btnSave.disabled = true;
+      btnSave.innerHTML = '<div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Publishing...';
+
+      try {
+        const res = await fetch('/api/studio/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ channel_name, handle, description, avatar_url }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || 'Failed to update channel');
+        }
+
+        window.location.reload();
+      } catch (err: any) {
+        errBox.textContent = err.message;
+        errBox.classList.remove('hidden');
+        btnSave.disabled = false;
+        btnSave.innerHTML = 'Publish Changes';
+      }
+    });
+  </script>
+</Layout>

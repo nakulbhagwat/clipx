@@ -1,0 +1,56 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Sidebar from '../components/Sidebar.astro';
+import VideoGrid from '../components/VideoGrid.astro';
+import CategoryPills from '../components/CategoryPills.astro';
+import { loadSiteConfig } from '../config/clipx';
+import { searchVideos } from '../lib/youtube';
+
+const config = await loadSiteConfig();
+const query = Astro.url.searchParams.get('q') || '';
+
+let mappedVideos: any[] = [];
+let error = null;
+
+if (query) {
+  try {
+    mappedVideos = await searchVideos(query, 24);
+  } catch (e: any) {
+    error = e.message;
+  }
+}
+
+const standardVideos = mappedVideos.filter(v => !v.isShort);
+const shortsVideos = mappedVideos.filter(v => v.isShort);
+---
+
+<Layout 
+	title={`${query ? `Search results for "${query}"` : 'Search'} - ${config.branding.siteName}`}
+	description={`Search results for ${query}`}
+	theme={config.branding.theme}
+>
+	<Header branding={config.branding} />
+	<Sidebar sidebarSections={config.sidebar} sidebarFooter={config.sidebarFooter} branding={config.branding} />
+
+	<main class="main-content min-h-screen px-6 md:px-12 lg:px-16 xl:px-20 max-w-[2200px] mx-auto pt-[72px] pb-16">
+		{/* Category Pills (Keep them here so the user can filter again if they want) */}
+		<div class="mb-6 sticky top-[120px] z-30 bg-[#000000] py-3 -mx-6 md:-mx-12 lg:-mx-16 xl:-mx-20 px-6 md:px-12 lg:px-16 xl:px-20 border-b border-[#1f1f1f]">
+			<CategoryPills categories={config.categories} />
+		</div>
+
+		<h1 class="text-2xl font-bold text-white mb-6">Search results for "{query}"</h1>
+
+		{error && (
+			<div class="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6">
+				<p class="text-red-400 font-medium text-sm">Failed to search YouTube: {error}</p>
+			</div>
+		)}
+
+		{!error && standardVideos.length > 0 ? (
+			<VideoGrid videos={standardVideos} />
+		) : !error && query ? (
+            <p class="text-[#aaa]">No results found.</p>
+        ) : null}
+	</main>
+</Layout>

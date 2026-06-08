@@ -1,0 +1,114 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Sidebar from '../components/Sidebar.astro';
+import VideoGrid from '../components/VideoGrid.astro';
+import { supabase } from '../lib/supabase';
+import { loadSiteConfig } from '../config/clipx';
+
+const { handle } = Astro.params;
+
+if (!handle) {
+  return new Response('Not found', { status: 404 });
+}
+
+// Fetch Channel Profile
+const { data: channel, error: channelError } = await supabase
+  .from('channels')
+  .select('*')
+  .eq('handle', handle)
+  .single();
+
+if (channelError || !channel) {
+  return new Response('Channel not found', { status: 404 });
+}
+
+// Fetch Channel's Videos
+const { data: rawVideos } = await supabase
+  .from('videos')
+  .select('*')
+  .eq('user_id', channel.id)
+  .order('created_at', { ascending: false });
+
+const videos = rawVideos ? rawVideos.map((v: any) => ({
+  id: v.id,
+  title: v.title || 'Untitled Clip',
+  views: v.view_count || 0,
+  duration: v.duration || '',
+  timestamp: new Date(v.created_at).toLocaleDateString() || 'Recently',
+  thumbnail: v.thumbnail_url || '',
+  author: {
+    name: channel.channel_name,
+    avatar: channel.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=fallback',
+    isVerified: false,
+    handle: channel.handle,
+  },
+  videoUrl: v.video_url || '',
+})) : [];
+
+const config = await loadSiteConfig();
+export const prerender = false;
+---
+
+<Layout 
+  title={`${channel.channel_name} - ${config.branding.siteName}`}
+  theme={config.branding.theme}
+>
+  <Header branding={config.branding} />
+  <Sidebar sidebarSections={config.sidebar} sidebarFooter={config.sidebarFooter} branding={config.branding} />
+
+  <main class="main-content min-h-[calc(100vh-56px)] bg-[#0f0f0f]">
+    {/* Channel Banner Header */}
+    <div class="w-full h-40 sm:h-56 md:h-64 lg:h-72 bg-[#1a1a1a] relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-r from-[var(--primary-from)] to-[var(--primary-to)] opacity-20"></div>
+      <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30 mix-blend-overlay"></div>
+    </div>
+
+    {/* Channel Info Section */}
+    <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6 py-6 border-b border-[#272727]">
+        {/* Avatar */}
+        <div class="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-[#0f0f0f] bg-[#1a1a1a] -mt-16 sm:-mt-20 relative z-10 overflow-hidden shrink-0">
+          <img src={channel.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=fallback'} alt={channel.channel_name} class="w-full h-full object-cover" />
+        </div>
+        
+        {/* Info */}
+        <div class="flex-1">
+          <h1 class="text-2xl sm:text-3xl font-bold text-[#f1f1f1]">{channel.channel_name}</h1>
+          <div class="flex items-center gap-2 text-sm text-[#aaa] mt-1">
+            <span class="font-medium">@{channel.handle}</span>
+            <span>•</span>
+            <span>{videos.length} videos</span>
+          </div>
+          <p class="text-sm text-[#aaa] mt-3 max-w-2xl leading-relaxed">{channel.description || 'No description provided.'}</p>
+        </div>
+        
+        {/* Subscribe Button */}
+        <div class="mt-4 sm:mt-0">
+          <button class="px-6 py-2.5 bg-[#f1f1f1] hover:bg-white text-[#0f0f0f] rounded-full font-medium transition-colors">
+            Subscribe
+          </button>
+        </div>
+      </div>
+
+      {/* Channel Navigation */}
+      <nav class="flex gap-8 border-b border-[#272727]">
+        <button class="px-2 py-4 text-sm font-medium text-[#f1f1f1] border-b-2 border-[var(--primary-from)]">Videos</button>
+        <button class="px-2 py-4 text-sm font-medium text-[#aaa] hover:text-[#f1f1f1] transition-colors">Playlists</button>
+        <button class="px-2 py-4 text-sm font-medium text-[#aaa] hover:text-[#f1f1f1] transition-colors">Community</button>
+      </nav>
+
+      {/* Videos Section */}
+      <div class="py-8">
+        <h2 class="text-lg font-semibold text-[#f1f1f1] mb-6">Latest from {channel.channel_name}</h2>
+        {videos.length > 0 ? (
+          <VideoGrid videos={videos} />
+        ) : (
+          <div class="text-center py-20">
+            <p class="text-[#aaa]">This channel has no videos yet.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  </main>
+</Layout>

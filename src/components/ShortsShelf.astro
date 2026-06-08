@@ -1,0 +1,80 @@
+---
+import { siteConfig } from '../config/clipx';
+import type { ShortItem } from '../config/clipx';
+
+interface Props {
+  heading?: string;
+  shorts?: ShortItem[];
+  localization?: typeof siteConfig.branding.localization;
+}
+
+const shorts = Astro.props.shorts || siteConfig.placeholderData.shorts;
+const heading = Astro.props.heading || siteConfig.sectionHeadings.shorts;
+const loc = Astro.props.localization || siteConfig.branding.localization;
+---
+
+<section class="mb-12">
+  <div class="flex items-center gap-3 mb-6">
+    {/* Shorts icon (red/pink lightning bolt style) */}
+    <div class="text-[var(--primary-from)]">
+      <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M17.77 10.32l-1.2-.5L18 9.06a3.74 3.74 0 00-3.5-6.62L6 6.94a3.74 3.74 0 00.23 6.74l1.2.49L6 14.93a3.75 3.75 0 003.5 6.63l8.5-4.5a3.74 3.74 0 00-.23-6.74zM10 14.65v-5.3L15 12l-5 2.65z" />
+      </svg>
+    </div>
+    <h2 class="text-xl font-bold text-[#f1f1f1]">{heading}</h2>
+  </div>
+
+  <div class="relative group/shelf">
+    <div class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory px-0.5">
+      {shorts.map((short) => (
+        <a href={`/shorts/${short.id}`} class="group shrink-0 w-[160px] sm:w-[210px] snap-start cursor-pointer block">
+          <div class="relative aspect-[9/16] rounded-xl overflow-hidden bg-[#272727] mb-2">
+            <img
+              src={short.thumbnail}
+              alt={short.title}
+              class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+            />
+            
+            {/* Gradient overlay for text legibility */}
+            <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+            
+            {/* Hover overlay (darker) */}
+            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"></div>
+
+            {/* Three-dot menu (visible on hover) */}
+            <button class="absolute top-2 right-2 w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full bg-black/60 hover:bg-black/80 text-white cursor-pointer z-10" aria-label="More actions">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="6" r="1.5" />
+                <circle cx="12" cy="12" r="1.5" />
+                <circle cx="12" cy="18" r="1.5" />
+              </svg>
+            </button>
+
+            {/* Shorts play badge */}
+            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+              <div class="w-12 h-12 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-sm">
+                <svg class="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+            </div>
+            
+            <div class="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/60 backdrop-blur-md text-[10px] font-medium text-white flex items-center gap-1">
+              <svg class="w-3 h-3 text-[var(--primary-from)]" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.77 10.32l-1.2-.5L18 9.06a3.74 3.74 0 00-3.5-6.62L6 6.94a3.74 3.74 0 00.23 6.74l1.2.49L6 14.93a3.75 3.75 0 003.5 6.63l8.5-4.5a3.74 3.74 0 00-.23-6.74z" />
+              </svg>
+              {loc.shortsBadge}
+            </div>
+          </div>
+          <h3 class="text-sm font-medium text-[#f1f1f1] line-clamp-2 leading-tight group-hover:text-[var(--primary-from)] transition-colors">
+            {short.title}
+          </h3>
+          <p class="text-xs text-[#aaa] mt-1.5">
+            {new Intl.NumberFormat('en-US', { notation: 'compact' }).format(short.views)} {loc.views}
+          </p>
+        </a>
+      ))}
+    </div>
+  </div>
+</section>

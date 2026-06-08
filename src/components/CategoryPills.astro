@@ -1,0 +1,31 @@
+---
+import { siteConfig } from '../config/clipx';
+
+interface Props {
+  categories?: { label: string; active: boolean }[];
+}
+
+const categories = Astro.props.categories || siteConfig.categories;
+---
+
+<div class="relative">
+  {/* Left fade */}
+  <div class="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-[#0f0f0f] to-transparent z-10 pointer-events-none opacity-0"></div>
+  {/* Right fade */}
+  <div class="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-[#0f0f0f] to-transparent z-10 pointer-events-none"></div>
+
+  <div class="flex gap-3 overflow-x-auto scrollbar-hide py-1 px-0.5">
+    {categories.map((cat) => (
+      <button
+        class:list={[
+          'shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer whitespace-nowrap',
+          cat.active
+            ? 'bg-[#f1f1f1] text-[#0f0f0f]'
+            : 'bg-[#272727] text-[#f1f1f1] hover:bg-[#3d3d3d]',
+        ]}
+      >
+        {cat.label}
+      </button>
+    ))}
+  </div>
+</div>

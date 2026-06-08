@@ -1,0 +1,664 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { supabaseServer } from '../lib/supabase';
+
+const supabase = supabaseServer(Astro.cookies);
+const { data: { session } } = await supabase.auth.getSession();
+
+if (!session) {
+  return Astro.redirect('/login');
+}
+
+const { data: profile } = await supabase.from('channels').select('is_admin').eq('id', session.user.id).single();
+if (!profile?.is_admin) {
+  return Astro.redirect('/');
+}
+
+export const prerender = false;
+---
+
+<Layout title="Admin Dashboard – ClipX" pageType="watch">
+  <header class="sticky top-0 z-50 h-16 bg-[#000000]/80 backdrop-blur-xl flex items-center px-6 border-b border-[#1f1f1f]">
+    <a href="/" class="flex items-center gap-1.5 select-none shrink-0 group" aria-label="ClipX Home">
+      <svg class="w-10 h-10 transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_0_12px_rgba(229,9,20,0.6)]" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5 8.35C10.5 5.86 13.2 4.3 15.36 5.54L28.12 12.89C30.28 14.13 30.28 17.25 28.12 18.49L15.36 25.84C13.2 27.08 10.5 25.52 10.5 23.03V8.35Z" stroke="url(#outerGradAdmin)" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M15 12.35C15 10.86 16.62 9.93 17.91 10.67L25.57 15.09C26.86 15.83 26.86 17.71 25.57 18.45L17.91 22.87C16.62 23.61 15 22.68 15 21.19V12.35Z" fill="url(#innerGradAdmin)"/>
+        <defs>
+          <linearGradient id="outerGradAdmin" x1="10" y1="4" x2="29" y2="26" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#ffffff" />
+            <stop offset="40%" stop-color="#e50914" />
+            <stop offset="100%" stop-color="#3b0000" />
+          </linearGradient>
+          <linearGradient id="innerGradAdmin" x1="15" y1="10" x2="26" y2="23" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#ff4d4d" />
+            <stop offset="100%" stop-color="#b91c1c" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <span class="font-black italic text-[30px] leading-none tracking-tight ml-0.5 flex items-baseline select-none">
+        <span class="text-white drop-shadow-md">Clip</span><span class="text-[#e50914] drop-shadow-[0_0_8px_rgba(229,9,20,0.6)]">X</span>
+      </span>
+    </a>
+    <div class="mx-4 h-6 w-px bg-[#333]"></div>
+    <h1 class="text-lg font-bold text-[#f5f5f5]">Admin</h1>
+    <nav class="flex items-center gap-1 ml-6">
+      <a href="/admin" class="px-4 py-1.5 rounded-full text-sm font-bold bg-[#1f1f1f] text-[#f5f5f5]">Videos</a>
+      <a href="/admin/settings" class="px-4 py-1.5 rounded-full text-sm font-bold text-[#888] hover:bg-[#1a1a1a] hover:text-[#f5f5f5] transition-colors">Site Settings</a>
+    </nav>
+    <div class="flex-1"></div>
+    <a href="/" class="text-sm text-[#888] hover:text-[#f5f5f5] transition-colors">← Back to Site</a>
+  </header>
+
+  <main class="max-w-[1400px] mx-auto px-6 py-8">
+    <div class="flex flex-col items-center justify-center py-20 text-center">
+      <svg class="w-20 h-20 text-[#e50914] mb-6" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
+      </svg>
+      <h2 class="text-2xl font-bold text-[#f1f1f1] mb-2">YouTube API Active</h2>
+      <p class="text-[#aaa] max-w-lg mb-8">
+        Your platform is currently configured to act as a dynamic interface, automatically fetching live, trending videos directly from the YouTube Data API.
+      </p>
+      <div class="bg-[#1a1a1a] border border-[#272727] rounded-xl p-6 text-left max-w-lg w-full shadow-lg">
+        <h3 class="text-sm font-bold text-[#f1f1f1] uppercase tracking-wider mb-3">What does this mean?</h3>
+        <ul class="space-y-3 text-sm text-[#888]">
+          <li class="flex items-start gap-2">
+            <svg class="w-5 h-5 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+            Homepage automatically updates with YouTube India trending videos.
+          </li>
+          <li class="flex items-start gap-2">
+            <svg class="w-5 h-5 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+            Zero storage costs. All streaming uses YouTube's infrastructure.
+          </li>
+          <li class="flex items-start gap-2 text-yellow-500">
+            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            Manual video management (uploading files) is currently disabled.
+          </li>
+        </ul>
+      </div>
+      <a href="/admin/settings" class="mt-8 px-6 py-3 bg-[#e50914] text-white rounded-full font-bold hover:bg-[#b91c1c] transition shadow-lg inline-flex items-center gap-2">
+        Go to Site Settings
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+      </a>
+    </div>
+  </main>
+
+  <!-- Modal Overlay -->
+  <div id="modal-overlay" class="hidden fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div id="modal-content" class="bg-[#1a1a1a] border border-[#272727] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b border-[#272727]">
+        <h3 id="modal-title" class="text-lg font-bold text-[#f1f1f1]">Add New Video</h3>
+        <button id="btn-modal-close" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#272727] transition cursor-pointer">
+          <svg class="w-5 h-5 text-[#aaa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <form id="video-form" class="p-6 space-y-5">
+        <input type="hidden" id="form-id" />
+
+        <!-- Title -->
+        <div>
+          <label for="form-title" class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Title *</label>
+          <input type="text" id="form-title" required class="w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm placeholder-[#666] focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/30 transition" placeholder="Enter video title..." />
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label for="form-description" class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Description</label>
+          <textarea id="form-description" rows="3" class="w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm placeholder-[#666] focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/30 transition resize-none" placeholder="Enter video description..."></textarea>
+        </div>
+
+        <!-- Video Upload -->
+        <div>
+          <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Video File / YouTube URL</label>
+          <input type="text" id="form-video-url" class="w-full mb-3 px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm placeholder-[#666] focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/30 transition" placeholder="Paste YouTube URL directly (Recommended)..." />
+          <div id="drop-video" class="relative border-2 border-dashed border-[#3d3d3d] rounded-xl p-6 text-center hover:border-red-600/50 transition-colors cursor-pointer group">
+            <input type="file" id="file-video" accept="video/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+            <div id="drop-video-idle" class="flex flex-col items-center">
+              <svg class="w-10 h-10 text-[#3d3d3d] group-hover:text-red-600/50 transition-colors mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+              </svg>
+              <p class="text-sm text-[#aaa]">Or drag & drop a video file, or <span class="text-red-500">browse</span></p>
+              <p class="text-xs text-[#666] mt-1">MP4, WebM, MOV supported</p>
+            </div>
+            <div id="drop-video-uploading" class="hidden flex-col items-center">
+              <div class="w-8 h-8 border-2 border-red-600/30 border-t-red-600 rounded-full animate-spin mb-2"></div>
+              <p class="text-sm text-red-500">Uploading video...</p>
+              <div class="w-48 h-1.5 bg-[#272727] rounded-full mt-2 overflow-hidden">
+                <div id="progress-video" class="h-full bg-gradient-to-r from-[var(--primary-from)] to-[var(--primary-to)] rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+            </div>
+            <div id="drop-video-done" class="hidden flex-col items-center">
+              <svg class="w-10 h-10 text-green-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p id="drop-video-name" class="text-sm text-green-400">Uploaded!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Thumbnail Upload -->
+        <div>
+          <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Thumbnail</label>
+          <div id="drop-thumbnail" class="relative border-2 border-dashed border-[#3d3d3d] rounded-xl p-6 text-center hover:border-red-600/50 transition-colors cursor-pointer group">
+            <input type="file" id="file-thumbnail" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+            <div id="drop-thumb-idle" class="flex flex-col items-center">
+              <svg class="w-10 h-10 text-[#3d3d3d] group-hover:text-red-600/50 transition-colors mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M6.75 7.5a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+              </svg>
+              <p class="text-sm text-[#aaa]">Drag & drop a thumbnail, or <span class="text-red-500">browse</span></p>
+              <p class="text-xs text-[#666] mt-1">JPG, PNG, WebP supported</p>
+            </div>
+            <div id="drop-thumb-uploading" class="hidden flex-col items-center">
+              <div class="w-8 h-8 border-2 border-red-600/30 border-t-red-600 rounded-full animate-spin mb-2"></div>
+              <p class="text-sm text-red-500">Uploading thumbnail...</p>
+              <div class="w-48 h-1.5 bg-[#272727] rounded-full mt-2 overflow-hidden">
+                <div id="progress-thumb" class="h-full bg-gradient-to-r from-[var(--primary-from)] to-[var(--primary-to)] rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+            </div>
+            <div id="drop-thumb-done" class="hidden flex-col items-center">
+              <svg class="w-10 h-10 text-green-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p id="drop-thumb-name" class="text-sm text-green-400">Uploaded!</p>
+            </div>
+          </div>
+          <input type="text" id="form-thumbnail-url" class="w-full mt-2 px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm placeholder-[#666] focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/30 transition" placeholder="Or paste thumbnail URL directly..." />
+        </div>
+
+        <!-- Row: Duration + Views -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="form-duration" class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Duration</label>
+            <input type="text" id="form-duration" class="w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm placeholder-[#666] focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/30 transition" placeholder="e.g. 10:23" />
+          </div>
+          <div>
+            <label for="form-views" class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">View Count</label>
+            <input type="number" id="form-views" class="w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm placeholder-[#666] focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/30 transition" placeholder="0" />
+          </div>
+        </div>
+
+        <!-- Timestamp -->
+        <div>
+          <label for="form-timestamp" class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Timestamp Label</label>
+          <input type="text" id="form-timestamp" class="w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm placeholder-[#666] focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/30 transition" placeholder="e.g. 3 days ago" />
+        </div>
+
+        <!-- Divider -->
+        <div class="border-t border-[#272727] pt-5">
+          <p class="text-xs font-medium text-[#aaa] uppercase tracking-wider mb-3">Author Details</p>
+        </div>
+
+        <!-- Row: Author Name + Verified -->
+        <div class="grid grid-cols-[1fr_auto] gap-4 items-end">
+          <div>
+            <label for="form-author-name" class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Author Name</label>
+            <input type="text" id="form-author-name" class="w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm placeholder-[#666] focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/30 transition" placeholder="Channel name" />
+          </div>
+          <label class="flex items-center gap-2 px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg cursor-pointer hover:border-red-600/30 transition">
+            <input type="checkbox" id="form-verified" class="w-4 h-4 rounded accent-red-600" />
+            <span class="text-sm text-[#aaa] whitespace-nowrap">Verified</span>
+          </label>
+        </div>
+
+        <!-- Author Avatar URL -->
+        <div>
+          <label for="form-author-avatar" class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Author Avatar URL</label>
+          <input type="text" id="form-author-avatar" class="w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm placeholder-[#666] focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600/30 transition" placeholder="https://..." />
+        </div>
+
+        <!-- Submit -->
+        <div class="flex items-center gap-3 pt-2">
+          <button type="submit" id="btn-submit" class="flex-1 py-3 bg-[#e50914] text-white rounded-full font-bold hover:bg-[#b91c1c] transition shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+            Save Video
+          </button>
+          <button type="button" id="btn-cancel" class="px-6 py-3 bg-[#111111] border border-[#333] text-[#f5f5f5] rounded-full font-bold hover:bg-[#1a1a1a] transition cursor-pointer">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Confirm Modal -->
+  <div id="delete-overlay" class="hidden fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#1a1a1a] border border-[#272727] rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+      <div class="flex items-center justify-center w-12 h-12 rounded-full bg-red-500/10 mx-auto mb-4">
+        <svg class="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+        </svg>
+      </div>
+      <h3 class="text-lg font-bold text-[#f1f1f1] text-center mb-2">Delete Video?</h3>
+      <p class="text-sm text-[#aaa] text-center mb-6">This action cannot be undone. The video will be permanently removed from your database.</p>
+      <div class="flex gap-3">
+        <button id="btn-delete-cancel" class="flex-1 py-2.5 bg-[#272727] text-[#f1f1f1] rounded-lg font-medium text-sm hover:bg-[#3d3d3d] transition cursor-pointer">Cancel</button>
+        <button id="btn-delete-confirm" class="flex-1 py-2.5 bg-red-600 text-white rounded-lg font-medium text-sm hover:bg-red-500 transition cursor-pointer">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 z-[120] hidden">
+    <div class="flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl border text-sm font-medium">
+      <span id="toast-message"></span>
+    </div>
+  </div>
+
+  <script>
+    import { createClient } from '@supabase/supabase-js';
+
+    // ─── Supabase Client ───
+    const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || '';
+    const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    // ─── DOM Elements ───
+    const loadingState = document.getElementById('loading-state')!;
+    const emptyState = document.getElementById('empty-state')!;
+    const errorState = document.getElementById('error-state')!;
+    const errorMessage = document.getElementById('error-message')!;
+    const tableWrapper = document.getElementById('video-table-wrapper')!;
+    const tableBody = document.getElementById('video-table-body')!;
+    const btnAdd = document.getElementById('btn-add-video')!;
+    const modalOverlay = document.getElementById('modal-overlay')!;
+    const modalTitle = document.getElementById('modal-title')!;
+    const btnModalClose = document.getElementById('btn-modal-close')!;
+    const btnCancel = document.getElementById('btn-cancel')!;
+    const videoForm = document.getElementById('video-form') as HTMLFormElement;
+    const btnSubmit = document.getElementById('btn-submit')!;
+    const deleteOverlay = document.getElementById('delete-overlay')!;
+    const btnDeleteCancel = document.getElementById('btn-delete-cancel')!;
+    const btnDeleteConfirm = document.getElementById('btn-delete-confirm')!;
+    const statTotal = document.getElementById('stat-total')!;
+    const statViews = document.getElementById('stat-views')!;
+    const statUploaded = document.getElementById('stat-uploaded')!;
+    const toast = document.getElementById('toast')!;
+    const toastMessage = document.getElementById('toast-message')!;
+
+    // Form fields
+    const formId = document.getElementById('form-id') as HTMLInputElement;
+    const formTitle = document.getElementById('form-title') as HTMLInputElement;
+    const formDescription = document.getElementById('form-description') as HTMLTextAreaElement;
+    const formVideoUrl = document.getElementById('form-video-url') as HTMLInputElement;
+    const formThumbnailUrl = document.getElementById('form-thumbnail-url') as HTMLInputElement;
+    const formDuration = document.getElementById('form-duration') as HTMLInputElement;
+    const formViews = document.getElementById('form-views') as HTMLInputElement;
+    const formTimestamp = document.getElementById('form-timestamp') as HTMLInputElement;
+    const formAuthorName = document.getElementById('form-author-name') as HTMLInputElement;
+    const formAuthorAvatar = document.getElementById('form-author-avatar') as HTMLInputElement;
+    const formVerified = document.getElementById('form-verified') as HTMLInputElement;
+
+    // File inputs
+    const fileVideo = document.getElementById('file-video') as HTMLInputElement;
+    const fileThumbnail = document.getElementById('file-thumbnail') as HTMLInputElement;
+
+    // Drop zone elements
+    const dropVideoIdle = document.getElementById('drop-video-idle')!;
+    const dropVideoUploading = document.getElementById('drop-video-uploading')!;
+    const dropVideoDone = document.getElementById('drop-video-done')!;
+    const dropVideoName = document.getElementById('drop-video-name')!;
+    const progressVideo = document.getElementById('progress-video')!;
+
+    const dropThumbIdle = document.getElementById('drop-thumb-idle')!;
+    const dropThumbUploading = document.getElementById('drop-thumb-uploading')!;
+    const dropThumbDone = document.getElementById('drop-thumb-done')!;
+    const dropThumbName = document.getElementById('drop-thumb-name')!;
+    const progressThumb = document.getElementById('progress-thumb')!;
+
+    let videos: any[] = [];
+    let deleteTargetId: string | null = null;
+
+    // ─── Toast ───
+    function showToast(message: string, type: 'success' | 'error' = 'success') {
+      const wrapper = toast.querySelector('div')!;
+      wrapper.className = `flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl border text-sm font-medium ${
+        type === 'success'
+          ? 'bg-green-500/10 border-green-500/30 text-green-400'
+          : 'bg-red-500/10 border-red-500/30 text-red-400'
+      }`;
+      toastMessage.textContent = message;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3500);
+    }
+
+    // ─── File Upload ───
+    async function uploadFile(bucket: 'videos' | 'thumbnails', file: File, progressEl: HTMLElement): Promise<string> {
+      const ext = file.name.split('.').pop();
+      const name = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+
+      progressEl.style.width = '20%';
+
+      const { data, error } = await supabase.storage.from(bucket).upload(name, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+      if (error) throw new Error(error.message);
+
+      progressEl.style.width = '80%';
+
+      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
+
+      progressEl.style.width = '100%';
+      return urlData.publicUrl;
+    }
+
+    function setupDropZone(
+      fileInput: HTMLInputElement,
+      dropZone: HTMLElement,
+      idleEl: HTMLElement,
+      uploadingEl: HTMLElement,
+      doneEl: HTMLElement,
+      nameEl: HTMLElement,
+      progressEl: HTMLElement,
+      bucket: 'videos' | 'thumbnails',
+      urlInput: HTMLInputElement
+    ) {
+      const handleFile = async (file: File) => {
+        idleEl.classList.add('hidden');
+        idleEl.classList.remove('flex');
+        uploadingEl.classList.remove('hidden');
+        uploadingEl.classList.add('flex');
+        doneEl.classList.add('hidden');
+        doneEl.classList.remove('flex');
+        progressEl.style.width = '0%';
+
+        try {
+          const url = await uploadFile(bucket, file, progressEl);
+          urlInput.value = url;
+          uploadingEl.classList.add('hidden');
+          uploadingEl.classList.remove('flex');
+          doneEl.classList.remove('hidden');
+          doneEl.classList.add('flex');
+          nameEl.textContent = file.name;
+          showToast(`${bucket === 'videos' ? 'Video' : 'Thumbnail'} uploaded!`);
+        } catch (err: any) {
+          idleEl.classList.remove('hidden');
+          idleEl.classList.add('flex');
+          uploadingEl.classList.add('hidden');
+          uploadingEl.classList.remove('flex');
+          showToast(`Upload failed: ${err.message}`, 'error');
+        }
+      };
+
+      fileInput.addEventListener('change', () => {
+        if (fileInput.files && fileInput.files[0]) handleFile(fileInput.files[0]);
+      });
+
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('border-red-600/50');
+      });
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('border-red-600/50');
+      });
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-red-600/50');
+        if (e.dataTransfer?.files?.[0]) handleFile(e.dataTransfer.files[0]);
+      });
+    }
+
+    setupDropZone(fileVideo, document.getElementById('drop-video')!, dropVideoIdle, dropVideoUploading, dropVideoDone, dropVideoName, progressVideo, 'videos', formVideoUrl);
+    setupDropZone(fileThumbnail, document.getElementById('drop-thumbnail')!, dropThumbIdle, dropThumbUploading, dropThumbDone, dropThumbName, progressThumb, 'thumbnails', formThumbnailUrl);
+
+    // ─── Load Videos ───
+    async function loadVideos() {
+      loadingState.classList.remove('hidden');
+      emptyState.classList.add('hidden');
+      errorState.classList.add('hidden');
+      tableWrapper.classList.add('hidden');
+
+      try {
+        const res = await fetch('/api/videos');
+        if (!res.ok) throw new Error('Failed to fetch videos');
+        videos = await res.json();
+
+        loadingState.classList.add('hidden');
+
+        // Stats
+        statTotal.textContent = String(videos.length);
+        const totalViews = videos.reduce((sum: number, v: any) => sum + (v.view_count || 0), 0);
+        statViews.textContent = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(totalViews);
+        statUploaded.textContent = String(videos.filter((v: any) => v.video_url).length);
+
+        if (videos.length === 0) {
+          emptyState.classList.remove('hidden');
+          emptyState.classList.add('flex');
+          return;
+        }
+
+        renderTable();
+        tableWrapper.classList.remove('hidden');
+      } catch (err: any) {
+        loadingState.classList.add('hidden');
+        errorState.classList.remove('hidden');
+        errorMessage.textContent = err.message;
+      }
+    }
+
+    // ─── Render Table ───
+    function renderTable() {
+      tableBody.innerHTML = videos
+        .map(
+          (v) => `
+        <tr class="border-b border-[#272727] hover:bg-[#272727]/30 transition-colors" data-id="${v.id}">
+          <td class="p-4">
+            <div class="flex items-center gap-3">
+              <div class="w-28 aspect-video rounded-lg bg-[#272727] overflow-hidden shrink-0">
+                ${v.thumbnail_url ? `<img src="${v.thumbnail_url}" alt="" class="w-full h-full object-cover" />` : `<div class="w-full h-full flex items-center justify-center"><svg class="w-6 h-6 text-[#3d3d3d]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909" /></svg></div>`}
+              </div>
+              <div class="min-w-0">
+                <p class="text-sm font-medium text-[#f1f1f1] truncate max-w-[240px]">${v.title || 'Untitled'}</p>
+                <p class="text-xs text-[#666] mt-0.5">${v.timestamp || '—'}</p>
+              </div>
+            </div>
+          </td>
+          <td class="p-4">
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-[#aaa]">${v.author_name || 'Anonymous'}</span>
+              ${v.is_verified ? '<svg class="w-3.5 h-3.5 text-[#aaa]" viewBox="0 0 24 24" fill="currentColor"><path d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" /></svg>' : ''}
+            </div>
+          </td>
+          <td class="p-4 text-sm text-[#aaa]">${new Intl.NumberFormat('en-US', { notation: 'compact' }).format(v.view_count || 0)}</td>
+          <td class="p-4 text-sm text-[#aaa]">${v.duration || '—'}</td>
+          <td class="p-4">
+            ${v.video_url
+              ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20"><span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>Ready</span>'
+              : '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"><span class="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span>No file</span>'
+            }
+          </td>
+          <td class="p-4 text-right">
+            <div class="flex items-center justify-end gap-1">
+              <button class="btn-edit w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#3d3d3d] transition cursor-pointer" title="Edit">
+                <svg class="w-4 h-4 text-[#aaa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                </svg>
+              </button>
+              <a href="/watch?v=${v.id}" target="_blank" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#3d3d3d] transition cursor-pointer" title="Preview">
+                <svg class="w-4 h-4 text-[#aaa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </a>
+              <button class="btn-delete w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-500/10 transition cursor-pointer" title="Delete">
+                <svg class="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `
+        )
+        .join('');
+
+      // Attach edit/delete handlers
+      tableBody.querySelectorAll('.btn-edit').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = (btn.closest('tr') as HTMLElement).dataset.id!;
+          openEditModal(id);
+        });
+      });
+
+      tableBody.querySelectorAll('.btn-delete').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = (btn.closest('tr') as HTMLElement).dataset.id!;
+          openDeleteConfirm(id);
+        });
+      });
+    }
+
+    // ─── Modal ───
+    function resetDropZones() {
+      [dropVideoIdle, dropThumbIdle].forEach((el) => { el.classList.remove('hidden'); el.classList.add('flex'); });
+      [dropVideoUploading, dropThumbUploading, dropVideoDone, dropThumbDone].forEach((el) => { el.classList.add('hidden'); el.classList.remove('flex'); });
+      progressVideo.style.width = '0%';
+      progressThumb.style.width = '0%';
+    }
+
+    function openAddModal() {
+      formId.value = '';
+      videoForm.reset();
+      resetDropZones();
+      modalTitle.textContent = 'Add New Video';
+      btnSubmit.textContent = 'Save Video';
+      modalOverlay.classList.remove('hidden');
+    }
+
+    function openEditModal(id: string) {
+      const v = videos.find((x: any) => x.id === id);
+      if (!v) return;
+
+      resetDropZones();
+      formId.value = v.id;
+      formTitle.value = v.title || '';
+      formDescription.value = v.description || '';
+      formVideoUrl.value = v.video_url || '';
+      formThumbnailUrl.value = v.thumbnail_url || '';
+      formDuration.value = v.duration || '';
+      formViews.value = String(v.view_count || 0);
+      formTimestamp.value = v.timestamp || '';
+      formAuthorName.value = v.author_name || '';
+      formAuthorAvatar.value = v.author_avatar || '';
+      formVerified.checked = v.is_verified || false;
+
+      // Show done state if URLs already exist
+      if (v.video_url) {
+        dropVideoIdle.classList.add('hidden');
+        dropVideoIdle.classList.remove('flex');
+        dropVideoDone.classList.remove('hidden');
+        dropVideoDone.classList.add('flex');
+        dropVideoName.textContent = 'Existing video file';
+      }
+      if (v.thumbnail_url) {
+        dropThumbIdle.classList.add('hidden');
+        dropThumbIdle.classList.remove('flex');
+        dropThumbDone.classList.remove('hidden');
+        dropThumbDone.classList.add('flex');
+        dropThumbName.textContent = 'Existing thumbnail';
+      }
+
+      modalTitle.textContent = 'Edit Video';
+      btnSubmit.textContent = 'Update Video';
+      modalOverlay.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      modalOverlay.classList.add('hidden');
+    }
+
+    btnAdd.addEventListener('click', openAddModal);
+    btnModalClose.addEventListener('click', closeModal);
+    btnCancel.addEventListener('click', closeModal);
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) closeModal();
+    });
+
+    // ─── Form Submit ───
+    videoForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      btnSubmit.setAttribute('disabled', 'true');
+      btnSubmit.textContent = 'Saving...';
+
+      const payload = {
+        title: formTitle.value,
+        description: formDescription.value,
+        video_url: formVideoUrl.value,
+        thumbnail_url: formThumbnailUrl.value,
+        duration: formDuration.value,
+        view_count: parseInt(formViews.value) || 0,
+        timestamp: formTimestamp.value || 'Just now',
+        author_name: formAuthorName.value || 'Anonymous',
+        author_avatar: formAuthorAvatar.value || null,
+        is_verified: formVerified.checked,
+      };
+
+      try {
+        const isEdit = !!formId.value;
+        const url = isEdit ? `/api/videos/${formId.value}` : '/api/videos';
+        const method = isEdit ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Failed to save');
+        }
+
+        showToast(isEdit ? 'Video updated!' : 'Video created!');
+        closeModal();
+        await loadVideos();
+      } catch (err: any) {
+        showToast(err.message, 'error');
+      } finally {
+        btnSubmit.removeAttribute('disabled');
+        btnSubmit.textContent = formId.value ? 'Update Video' : 'Save Video';
+      }
+    });
+
+    // ─── Delete ───
+    function openDeleteConfirm(id: string) {
+      deleteTargetId = id;
+      deleteOverlay.classList.remove('hidden');
+    }
+
+    btnDeleteCancel.addEventListener('click', () => {
+      deleteOverlay.classList.add('hidden');
+      deleteTargetId = null;
+    });
+
+    btnDeleteConfirm.addEventListener('click', async () => {
+      if (!deleteTargetId) return;
+
+      try {
+        const res = await fetch(`/api/videos/${deleteTargetId}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Delete failed');
+
+        showToast('Video deleted');
+        deleteOverlay.classList.add('hidden');
+        deleteTargetId = null;
+        await loadVideos();
+      } catch (err: any) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    deleteOverlay.addEventListener('click', (e) => {
+      if (e.target === deleteOverlay) {
+        deleteOverlay.classList.add('hidden');
+        deleteTargetId = null;
+      }
+    });
+
+    // ─── Init ───
+    loadVideos();
+  </script>
+</Layout>

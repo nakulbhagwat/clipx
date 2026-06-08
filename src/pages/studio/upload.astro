@@ -1,0 +1,297 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { supabaseServer } from '../../lib/supabase';
+
+const supabase = supabaseServer(Astro.cookies);
+const { data: { session } } = await supabase.auth.getSession();
+
+if (!session) {
+  return Astro.redirect('/login');
+}
+
+const { data: profile } = await supabase
+  .from('channels')
+  .select('*')
+  .eq('id', session.user.id)
+  .single();
+
+export const prerender = false;
+---
+
+<Layout title={`Upload Video - ${profile?.channel_name || 'Studio'}`} pageType="watch">
+  <header class="sticky top-0 z-50 h-16 bg-[#000000]/80 backdrop-blur-xl flex items-center px-6 border-b border-[#1f1f1f]">
+    <a href="/studio" class="flex items-center gap-2 group" aria-label="Back to Studio">
+      <svg class="w-5 h-5 text-[#aaa] group-hover:text-[#f1f1f1] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+      </svg>
+      <span class="text-sm font-medium text-[#aaa] group-hover:text-[#f1f1f1] transition-colors">Back to Studio</span>
+    </a>
+  </header>
+
+  <main class="max-w-[800px] mx-auto px-6 py-12">
+    <div class="bg-[#0a0a0a] border border-[#1f1f1f] rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+      <div class="absolute -top-24 -right-24 w-48 h-48 bg-white/5 rounded-full blur-[80px] pointer-events-none"></div>
+
+      <div class="mb-8">
+        <h1 class="text-2xl font-bold text-[#f5f5f5]">Upload Video</h1>
+        <p class="text-[#888] text-sm mt-1">Share your content with the world.</p>
+      </div>
+
+      <form id="upload-form" class="space-y-6 relative z-10">
+        
+        <!-- Video Upload Dropzone -->
+        <div>
+          <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-2">Video File *</label>
+          <div id="drop-video" class="relative border-2 border-dashed border-[#333] rounded-2xl p-10 text-center hover:border-white/50 hover:bg-white/5 transition-all cursor-pointer group">
+            <input type="file" id="file-video" accept="video/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required />
+            
+            <div id="drop-video-idle" class="flex flex-col items-center">
+              <div class="w-16 h-16 rounded-full bg-[#111111] group-hover:bg-white/10 flex items-center justify-center mb-4 transition-colors">
+                <svg class="w-8 h-8 text-[#666] group-hover:text-[#f5f5f5] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                </svg>
+              </div>
+              <p class="text-base text-[#f5f5f5] font-bold">Select video to upload</p>
+              <p class="text-sm text-[#888] mt-1">Or drag and drop a file</p>
+              <p class="text-xs text-[#555] mt-4">MP4 or WebM • Up to 2GB</p>
+            </div>
+
+            <div id="drop-video-uploading" class="hidden flex-col items-center w-full max-w-sm mx-auto">
+              <div class="w-10 h-10 border-2 border-white/30 border-t-white rounded-full animate-spin mb-4"></div>
+              <p class="text-sm font-bold text-white mb-3">Uploading to secure storage...</p>
+              <div class="w-full h-2 bg-[#1f1f1f] rounded-full overflow-hidden">
+                <div id="progress-video" class="h-full bg-white rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <div id="drop-video-done" class="hidden flex-col items-center">
+              <div class="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
+                <svg class="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <p id="drop-video-name" class="text-base font-medium text-[#f1f1f1]">video.mp4</p>
+              <p class="text-sm text-red-500 mt-1">Upload complete!</p>
+            </div>
+          </div>
+          <input type="hidden" id="form-video-url" required />
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-6">
+            <!-- Title -->
+            <div>
+              <label for="form-title" class="block text-xs font-bold text-[#888] uppercase tracking-wider mb-2">Title *</label>
+              <input type="text" id="form-title" required class="w-full px-4 py-3 bg-[#111111] border border-[#333] rounded-xl text-[#f5f5f5] placeholder-[#666] focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition" placeholder="Add a title that describes your video" />
+            </div>
+
+            <!-- Description -->
+            <div>
+              <label for="form-description" class="block text-xs font-bold text-[#888] uppercase tracking-wider mb-2">Description</label>
+              <textarea id="form-description" rows="5" class="w-full px-4 py-3 bg-[#111111] border border-[#333] rounded-xl text-[#f5f5f5] placeholder-[#666] focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition resize-none" placeholder="Tell viewers about your video"></textarea>
+            </div>
+          </div>
+
+          <div class="space-y-6">
+            <!-- Thumbnail Upload -->
+            <div>
+              <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-2">Thumbnail</label>
+              <p class="text-xs text-[#aaa] mb-3">Upload a picture that shows what's in your video.</p>
+              
+              <div id="drop-thumbnail" class="relative border-2 border-dashed border-[#333] rounded-xl aspect-video flex flex-col items-center justify-center hover:border-white/50 hover:bg-white/5 transition-all cursor-pointer group overflow-hidden">
+                <input type="file" id="file-thumbnail" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                
+                <div id="drop-thumb-idle" class="flex flex-col items-center absolute inset-0 justify-center">
+                  <svg class="w-8 h-8 text-[#666] group-hover:text-white mb-2 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                  </svg>
+                  <span class="text-xs font-bold text-[#888]">Upload Thumbnail</span>
+                </div>
+                
+                <img id="thumb-preview" src="" class="absolute inset-0 w-full h-full object-cover hidden" />
+              </div>
+              <input type="hidden" id="form-thumbnail-url" />
+            </div>
+            
+            <!-- Visibility -->
+            <div>
+              <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-2">Visibility</label>
+              <div class="px-4 py-3 bg-[#0f0f0f] border border-[#3d3d3d] rounded-xl flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-[#f1f1f1]">Public</p>
+                    <p class="text-xs text-[#aaa]">Everyone can see this video</p>
+                  </div>
+                </div>
+                <div class="w-4 h-4 rounded-full border-4 border-green-500"></div>
+              </div>
+            </div>
+
+            <!-- Is Short -->
+            <div>
+              <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-2">Format</label>
+              <div class="px-4 py-3 bg-[#111111] border border-[#333] rounded-xl flex items-center justify-between cursor-pointer" onclick="document.getElementById('form-is-short').click()">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.829 1.58-1.936a4.5 4.5 0 004.5-4.5M9.75 18v-.192c0-.983-.658-1.829-1.58-1.936a4.5 4.5 0 01-4.5-4.5V6.75a4.5 4.5 0 014.5-4.5h9a4.5 4.5 0 014.5 4.5v6.75" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-[#f5f5f5]">Upload as Short</p>
+                    <p class="text-xs text-[#aaa]">Vertical video</p>
+                  </div>
+                </div>
+                <input type="checkbox" id="form-is-short" class="w-4 h-4 accent-white bg-[#111111] border-[#333] rounded" onclick="event.stopPropagation()" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="error-message" class="hidden p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mt-4"></div>
+
+        <div class="flex items-center justify-between pt-4 mt-6 border-t border-[#1f1f1f]">
+          <a href="/studio" class="text-[#888] hover:text-white transition text-sm font-semibold">Cancel</a>
+          <button type="submit" id="btn-save" class="px-8 py-3 bg-[#e50914] text-white rounded-full font-bold hover:bg-[#b91c1c] transition shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+            <span>Publish Video</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    import { supabase } from '../../lib/supabase';
+
+    const form = document.getElementById('upload-form') as HTMLFormElement;
+    const btnSave = document.getElementById('btn-save') as HTMLButtonElement;
+    const errBox = document.getElementById('error-message') as HTMLDivElement;
+
+    const fileVideo = document.getElementById('file-video') as HTMLInputElement;
+    const dropVideoIdle = document.getElementById('drop-video-idle')!;
+    const dropVideoUploading = document.getElementById('drop-video-uploading')!;
+    const dropVideoDone = document.getElementById('drop-video-done')!;
+    const dropVideoName = document.getElementById('drop-video-name')!;
+    const progressVideo = document.getElementById('progress-video')!;
+    const formVideoUrl = document.getElementById('form-video-url') as HTMLInputElement;
+
+    const fileThumb = document.getElementById('file-thumbnail') as HTMLInputElement;
+    const thumbPreview = document.getElementById('thumb-preview') as HTMLImageElement;
+    const thumbIdle = document.getElementById('drop-thumb-idle')!;
+    const formThumbUrl = document.getElementById('form-thumbnail-url') as HTMLInputElement;
+
+    // Supabase Storage Upload Helper
+    async function uploadFile(bucket: 'videos' | 'thumbnails', file: File, progressEl?: HTMLElement) {
+      const ext = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${ext}`;
+      const filePath = `${fileName}`;
+
+      if (progressEl) progressEl.style.width = '20%';
+
+      const { data, error } = await supabase.storage.from(bucket).upload(filePath, file, { cacheControl: '3600', upsert: false });
+      if (error) throw error;
+
+      if (progressEl) progressEl.style.width = '80%';
+      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
+      if (progressEl) progressEl.style.width = '100%';
+      
+      return urlData.publicUrl;
+    }
+
+    // Handle Video File Selection
+    fileVideo.addEventListener('change', async () => {
+      const file = fileVideo.files?.[0];
+      if (!file) return;
+
+      dropVideoIdle.classList.add('hidden');
+      dropVideoUploading.classList.remove('hidden');
+      dropVideoUploading.classList.add('flex');
+      dropVideoDone.classList.add('hidden');
+      errBox.classList.add('hidden');
+
+      try {
+        const url = await uploadFile('videos', file, progressVideo);
+        formVideoUrl.value = url;
+        
+        dropVideoUploading.classList.add('hidden');
+        dropVideoUploading.classList.remove('flex');
+        dropVideoDone.classList.remove('hidden');
+        dropVideoDone.classList.add('flex');
+        dropVideoName.textContent = file.name;
+      } catch (err: any) {
+        dropVideoIdle.classList.remove('hidden');
+        dropVideoUploading.classList.add('hidden');
+        dropVideoUploading.classList.remove('flex');
+        errBox.textContent = `Upload failed: ${err.message}`;
+        errBox.classList.remove('hidden');
+        fileVideo.value = '';
+      }
+    });
+
+    // Handle Thumbnail File Selection
+    fileThumb.addEventListener('change', async () => {
+      const file = fileThumb.files?.[0];
+      if (!file) return;
+      
+      thumbIdle.innerHTML = `<div class="w-6 h-6 border-2 border-red-600/30 border-t-red-600 rounded-full animate-spin"></div>`;
+
+      try {
+        const url = await uploadFile('thumbnails', file);
+        formThumbUrl.value = url;
+        
+        thumbPreview.src = url;
+        thumbPreview.classList.remove('hidden');
+        thumbIdle.classList.add('hidden');
+      } catch (err: any) {
+        thumbIdle.innerHTML = `<span class="text-xs text-red-400">Failed</span>`;
+      }
+    });
+
+    // Submit Form
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (!formVideoUrl.value) {
+        errBox.textContent = 'Please wait for the video to finish uploading.';
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      const title = (document.getElementById('form-title') as HTMLInputElement).value;
+      const description = (document.getElementById('form-description') as HTMLTextAreaElement).value;
+      const isShort = (document.getElementById('form-is-short') as HTMLInputElement).checked;
+
+      btnSave.disabled = true;
+      btnSave.innerHTML = '<div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Publishing...';
+
+      try {
+        const res = await fetch('/api/studio/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title,
+            description,
+            is_short: isShort,
+            video_url: formVideoUrl.value,
+            thumbnail_url: formThumbUrl.value || null,
+          }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || 'Failed to publish video');
+        }
+
+        window.location.href = '/studio';
+      } catch (err: any) {
+        errBox.textContent = err.message;
+        errBox.classList.remove('hidden');
+        btnSave.disabled = false;
+        btnSave.innerHTML = 'Publish Video';
+      }
+    });
+  </script>
+</Layout>

@@ -1,0 +1,117 @@
+---
+import Header from '../components/Header.astro';
+import Layout from '../layouts/Layout.astro';
+import { siteConfig } from '../config/clipx';
+import { supabaseServer } from '../lib/supabase';
+
+const supabase = supabaseServer(Astro.cookies);
+const { data: { session } } = await supabase.auth.getSession();
+
+if (session) {
+  return Astro.redirect('/');
+}
+
+export const prerender = false;
+---
+
+<Layout title={`Create Account - ${siteConfig.branding.siteName}`} pageType="watch">
+  <Header branding={siteConfig.branding} />
+
+  <main class="flex-1 flex items-center justify-center p-6 my-10">
+      <div class="w-full max-w-md bg-[#1a1a1a] rounded-3xl p-8 border border-[#272727] shadow-2xl relative overflow-hidden">
+        {/* Decorative Glow */}
+        <div class="absolute -top-24 -left-24 w-48 h-48 bg-[var(--primary-from)]/20 rounded-full blur-[80px] pointer-events-none"></div>
+        <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-[var(--primary-to)]/20 rounded-full blur-[80px] pointer-events-none"></div>
+
+        <div class="relative z-10">
+          <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold mb-2">Join {siteConfig.branding.siteName}</h1>
+            <p class="text-[#aaa] text-sm">Create your channel and start sharing.</p>
+          </div>
+
+          <form id="signup-form" class="space-y-4">
+            <div>
+              <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Channel Name</label>
+              <input type="text" id="name" required class="w-full px-4 py-3 bg-[#0f0f0f] border border-[#3d3d3d] rounded-xl text-[#f1f1f1] focus:outline-none focus:border-[var(--primary-from)] focus:ring-1 focus:ring-[var(--primary-from)] transition placeholder-[#666]" placeholder="Awesome Creator" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Handle</label>
+              <div class="relative">
+                <span class="absolute left-4 top-3.5 text-[#666] font-medium">@</span>
+                <input type="text" id="handle" required class="w-full pl-9 pr-4 py-3 bg-[#0f0f0f] border border-[#3d3d3d] rounded-xl text-[#f1f1f1] focus:outline-none focus:border-[var(--primary-from)] focus:ring-1 focus:ring-[var(--primary-from)] transition placeholder-[#666]" placeholder="awesomecreator" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Email Address</label>
+              <input type="email" id="email" required class="w-full px-4 py-3 bg-[#0f0f0f] border border-[#3d3d3d] rounded-xl text-[#f1f1f1] focus:outline-none focus:border-[var(--primary-from)] focus:ring-1 focus:ring-[var(--primary-from)] transition placeholder-[#666]" placeholder="you@example.com" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Password</label>
+              <input type="password" id="password" required minlength="6" class="w-full px-4 py-3 bg-[#0f0f0f] border border-[#3d3d3d] rounded-xl text-[#f1f1f1] focus:outline-none focus:border-[var(--primary-from)] focus:ring-1 focus:ring-[var(--primary-from)] transition placeholder-[#666]" placeholder="••••••••" />
+            </div>
+
+            <div id="error-message" class="hidden p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm mt-4"></div>
+
+            <button type="submit" id="submit-btn" class="w-full py-3.5 mt-6 bg-gradient-to-r from-[var(--primary-from)] to-[var(--primary-to)] text-white rounded-xl font-semibold hover:opacity-90 transition shadow-lg shadow-[var(--primary-from)]/25 flex justify-center items-center gap-2">
+              <span>Create Account</span>
+            </button>
+          </form>
+
+          <p class="text-center text-sm text-[#aaa] mt-8">
+            Already have an account? 
+            <a href="/login" class="text-[var(--primary-from)] hover:underline font-medium ml-1">Sign in</a>
+          </p>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const form = document.getElementById('signup-form') as HTMLFormElement;
+      const btn = document.getElementById('submit-btn') as HTMLButtonElement;
+      const errBox = document.getElementById('error-message') as HTMLDivElement;
+      
+      const handleInput = document.getElementById('handle') as HTMLInputElement;
+      handleInput.addEventListener('input', (e) => {
+        let val = (e.target as HTMLInputElement).value;
+        val = val.toLowerCase().replace(/[^a-z0-9_]/g, '');
+        (e.target as HTMLInputElement).value = val;
+      });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = (document.getElementById('name') as HTMLInputElement).value;
+        const handle = handleInput.value;
+        const email = (document.getElementById('email') as HTMLInputElement).value;
+        const password = (document.getElementById('password') as HTMLInputElement).value;
+
+        btn.disabled = true;
+        btn.innerHTML = '<div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Creating Account...';
+        errBox.classList.add('hidden');
+
+        try {
+          const res = await fetch('/api/auth/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, name, handle }),
+          });
+
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.error || 'Failed to create account.');
+          }
+
+          // Force redirect on success
+          window.location.href = '/';
+        } catch (err: any) {
+          errBox.textContent = err.message;
+          errBox.classList.remove('hidden');
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = '<span>Create Account</span>';
+        }
+      });
+    </script>
+</Layout>

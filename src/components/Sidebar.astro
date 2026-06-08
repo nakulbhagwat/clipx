@@ -1,0 +1,78 @@
+---
+import { siteConfig } from '../config/clipx';
+import type { SidebarSection } from '../config/clipx';
+
+interface Props {
+  sidebarSections?: SidebarSection[];
+  sidebarFooter?: string[];
+  branding?: typeof siteConfig.branding;
+}
+
+const sidebarSections = Astro.props.sidebarSections || siteConfig.sidebar;
+const footerLinks = Astro.props.sidebarFooter || siteConfig.sidebarFooter;
+const branding = Astro.props.branding || siteConfig.branding;
+const { signInPrompt, signInLabel, copyright } = branding;
+
+// Icon SVG paths (24x24 viewBox, stroke-based)
+const iconPaths: Record<string, string> = {
+  home: '<path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-8 9 8"/><path stroke-linecap="round" stroke-linejoin="round" d="M5 10v10a1 1 0 001 1h3v-5a1 1 0 011-1h4a1 1 0 011 1v5h3a1 1 0 001-1V10"/>',
+  shorts: '<rect x="7" y="2" width="10" height="20" rx="2.5" fill="none"/><path d="M10.5 8.5l5 3.5-5 3.5z" fill="currentColor" stroke="none"/>',
+  subscriptions: '<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 7.5h16.5v12a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-12z"/><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 4.5h9M5.25 3h13.5"/><path d="M10 11.5l5 3-5 3z" fill="currentColor" stroke="none"/>',
+  user: '<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0"/>',
+  history: '<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2"/><circle cx="12" cy="12" r="9" fill="none"/>',
+  playlist: '<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"/>',
+  clock: '<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2"/><circle cx="12" cy="12" r="9" fill="none"/>',
+  thumbsUp: '<path stroke-linecap="round" stroke-linejoin="round" d="M7.5 15h2.25m8.024-9.75c.011.05.028.1.05.148A12.3 12.3 0 0118.75 9c0 1.49-.36 2.89-1 4.13M17.774 5.25H18a2.25 2.25 0 012.25 2.25v7.5A2.25 2.25 0 0118 17.25h-1.5M7.5 15H5.25A2.25 2.25 0 013 12.75V7.5A2.25 2.25 0 015.25 5.25h.39L7.5 4h3l2 2.25h1L14 4h1.5"/>',
+  flame: '<path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.362-6.867 8.21 8.21 0 003 2.48z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 00.495-7.468 5.99 5.99 0 00-1.925 3.547 5.975 5.975 0 01-2.133-1.001A3.75 3.75 0 0012 18z"/>',
+  shopping: '<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.12 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z"/>',
+  music: '<path stroke-linecap="round" stroke-linejoin="round" d="M9 19.5V6l12-2v13.5"/><circle cx="6" cy="19.5" r="3" fill="none"/><circle cx="18" cy="17.5" r="3" fill="none"/>',
+  film: '<rect x="2" y="4" width="20" height="16" rx="2" fill="none"/><path stroke-linecap="round" stroke-linejoin="round" d="M2 8h20M2 16h20M7 4v4M7 16v4M17 4v4M17 16v4"/>',
+  radio: '<circle cx="12" cy="12" r="2" fill="none"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.24 7.76a6 6 0 010 8.49m-8.48-.01a6 6 0 010-8.49"/>',
+  gamepad: '<path stroke-linecap="round" stroke-linejoin="round" d="M14.25 6.087c0-.355.186-.676.401-.959.221-.29.349-.634.349-1.003 0-1.036-1.007-1.875-2.25-1.875s-2.25.84-2.25 1.875c0 .369.128.713.349 1.003.215.283.401.604.401.959v0a.64.64 0 01-.657.643 48.491 48.491 0 00-4.163.3c-1.23.148-2.18 1.077-2.308 2.305a48 48 0 00-.292 4.105c-.017.457.277.858.706.986a48.073 48.073 0 007.389.907h.464a48.07 48.07 0 007.389-.907c.429-.128.723-.529.706-.986a47.99 47.99 0 00-.292-4.105c-.128-1.228-1.079-2.157-2.308-2.305a48.489 48.489 0 00-4.163-.3.64.64 0 01-.657-.643z"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 13h.01M14 11h.01M10 11h4"/>',
+  newspaper: '<path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6z"/>',
+  trophy: '<path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-4.5A3.375 3.375 0 0019.875 10.875H20.25A2.25 2.25 0 0022.5 8.625v-1.5a2.25 2.25 0 00-2.25-2.25h-.375A3.375 3.375 0 0016.5 8.25v0M7.5 14.25v4.5m0-4.5A3.375 3.375 0 014.125 10.875H3.75A2.25 2.25 0 011.5 8.625v-1.5A2.25 2.25 0 013.75 4.875h.375A3.375 3.375 0 017.5 8.25v0M7.5 8.25h9v2.25a4.5 4.5 0 01-9 0V8.25z"/>',
+  graduation: '<path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 00-.491 6.347A48.62 48.62 0 0112 20.904a48.62 48.62 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.636 50.636 0 00-2.658-.813A59.906 59.906 0 0112 3.493a59.903 59.903 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0112 13.489a50.72 50.72 0 017.74-3.342M6.75 15v-3.75"/>',
+  podcast: '<path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"/>',
+  premium: '<path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"/>',
+  musicNote: '<path stroke-linecap="round" stroke-linejoin="round" d="M9 19.5V6l12-2v13.5"/><circle cx="6" cy="19.5" r="3" fill="none"/><circle cx="18" cy="17.5" r="3" fill="none"/>',
+};
+---
+
+<aside class="sidebar scrollbar-hide fixed top-16 left-0 right-0 h-14 bg-[#000000]/95 backdrop-blur-md border-b border-[#1f1f1f] z-40 flex items-center px-4 overflow-x-auto" aria-label="Top navigation">
+  <div class="flex items-center h-full gap-4">
+    {sidebarSections.map((section, sectionIdx) => (
+      <div class="flex items-center h-full shrink-0">
+        {sectionIdx > 0 && (
+          <div class="w-px h-6 bg-[#333] mx-3"></div>
+        )}
+        <div class="flex items-center gap-2 h-full">
+          {section.items.map((item) => (
+            <a
+              href={item.href}
+              class:list={[
+                'flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium transition-colors whitespace-nowrap',
+                item.active
+                  ? 'bg-[#e50914] text-white shadow-sm font-bold'
+                  : 'text-[#a3a3a3] hover:bg-[#1a1a1a] hover:text-white',
+              ]}
+            >
+              <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width={item.active ? "2" : "1.5"} set:html={iconPaths[item.icon] || ''} />
+              <span>{item.label}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    ))}
+
+    {/* Footer links in Top Nav */}
+    <div class="flex items-center h-full shrink-0">
+      <div class="w-px h-6 bg-[#333] mx-3"></div>
+      <div class="flex items-center gap-3">
+        {footerLinks.slice(0, 3).map((link) => (
+          <a href="#" class="text-[12px] text-[#666] hover:text-[#aaa] font-medium transition-colors whitespace-nowrap">{link}</a>
+        ))}
+        <span class="text-[12px] text-[#555] ml-2 whitespace-nowrap">{copyright}</span>
+      </div>
+    </div>
+  </div>
+</aside>

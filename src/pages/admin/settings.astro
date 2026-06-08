@@ -1,0 +1,735 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { siteConfig } from '../../config/clipx';
+import { supabaseServer } from '../../lib/supabase';
+
+const supabase = supabaseServer(Astro.cookies);
+const { data: { session } } = await supabase.auth.getSession();
+
+if (!session) {
+  return Astro.redirect('/login');
+}
+
+const { data: profile } = await supabase.from('channels').select('is_admin').eq('id', session.user.id).single();
+if (!profile?.is_admin) {
+  return Astro.redirect('/');
+}
+
+export const prerender = false;
+---
+
+<Layout title="Site Settings – ClipX Admin" pageType="watch">
+  <header class="sticky top-0 z-50 h-16 bg-[#000000]/80 backdrop-blur-xl flex items-center px-6 border-b border-[#1f1f1f]">
+    <a href="/" class="flex items-center gap-1.5 select-none shrink-0 group" aria-label="ClipX Home">
+      <svg class="w-10 h-10 transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_0_12px_rgba(229,9,20,0.6)]" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5 8.35C10.5 5.86 13.2 4.3 15.36 5.54L28.12 12.89C30.28 14.13 30.28 17.25 28.12 18.49L15.36 25.84C13.2 27.08 10.5 25.52 10.5 23.03V8.35Z" stroke="url(#outerGradAdminSet)" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M15 12.35C15 10.86 16.62 9.93 17.91 10.67L25.57 15.09C26.86 15.83 26.86 17.71 25.57 18.45L17.91 22.87C16.62 23.61 15 22.68 15 21.19V12.35Z" fill="url(#innerGradAdminSet)"/>
+        <defs>
+          <linearGradient id="outerGradAdminSet" x1="10" y1="4" x2="29" y2="26" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#ffffff" />
+            <stop offset="40%" stop-color="#e50914" />
+            <stop offset="100%" stop-color="#3b0000" />
+          </linearGradient>
+          <linearGradient id="innerGradAdminSet" x1="15" y1="10" x2="26" y2="23" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#ff4d4d" />
+            <stop offset="100%" stop-color="#b91c1c" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <span class="font-black italic text-[30px] leading-none tracking-tight ml-0.5 flex items-baseline select-none">
+        <span class="text-white drop-shadow-md">Clip</span><span class="text-[#e50914] drop-shadow-[0_0_8px_rgba(229,9,20,0.6)]">X</span>
+      </span>
+    </a>
+    <div class="mx-4 h-6 w-px bg-[#333]"></div>
+    <h1 class="text-lg font-bold text-[#f5f5f5]">Admin</h1>
+    <nav class="flex items-center gap-1 ml-6">
+      <a href="/admin" class="px-4 py-1.5 rounded-full text-sm font-bold text-[#888] hover:bg-[#1a1a1a] hover:text-[#f5f5f5] transition-colors">Videos</a>
+      <a href="/admin/settings" class="px-4 py-1.5 rounded-full text-sm font-bold bg-[#1f1f1f] text-[#f5f5f5]">Site Settings</a>
+    </nav>
+    <div class="flex-1"></div>
+    <button id="btn-save-all" class="mr-6 px-5 py-2 bg-[#e50914] text-white rounded-full font-bold text-sm hover:bg-[#b91c1c] transition-all shadow-lg hidden flex items-center gap-2 cursor-pointer">
+      Save Settings
+    </button>
+    <a href="/" class="text-sm text-[#888] hover:text-[#f5f5f5] transition-colors">← Back to Site</a>
+  </header>
+
+  <main class="max-w-[900px] mx-auto px-6 py-8">
+    <!-- Loading -->
+    <div id="settings-loading" class="flex flex-col items-center justify-center py-20">
+      <div class="w-10 h-10 border-2 border-white/20 border-t-white rounded-full animate-spin mb-4"></div>
+      <p class="text-[#888] font-medium text-sm">Loading settings...</p>
+    </div>
+
+    <!-- Settings Content -->
+    <div id="settings-content" class="hidden space-y-8">
+
+      <!-- ═══ BRANDING ═══ -->
+      <section class="bg-[#1a1a1a] border border-[#272727] rounded-2xl overflow-hidden">
+        <div class="flex items-center justify-between p-5 border-b border-[#272727]">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-red-600/10 flex items-center justify-center">
+              <svg class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-base font-semibold text-[#f1f1f1]">Branding</h2>
+              <p class="text-xs text-[#666]">Site name, logo, labels</p>
+            </div>
+          </div>
+        </div>
+        <div class="p-5 space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Site Name</label>
+              <input type="text" data-field="branding.siteName" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Copyright</label>
+              <input type="text" data-field="branding.copyright" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Search Placeholder</label>
+              <input type="text" data-field="branding.searchPlaceholder" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Sign In Label</label>
+              <input type="text" data-field="branding.signInLabel" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Sign In Prompt</label>
+            <input type="text" data-field="branding.signInPrompt" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition" />
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Logo Text (Clip)</label>
+              <input type="text" data-field="branding.logoClip" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Create Button Label</label>
+              <input type="text" data-field="branding.createLabel" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition" />
+        </div>
+      </section>
+
+      <!-- ═══ SEO & METADATA ═══ -->
+      <section class="bg-[#1a1a1a] border border-[#272727] rounded-2xl overflow-hidden">
+        <div class="flex items-center justify-between p-5 border-b border-[#272727]">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-teal-500/10 flex items-center justify-center">
+              <svg class="w-5 h-5 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-base font-semibold text-[#f1f1f1]">SEO & Metadata</h2>
+              <p class="text-xs text-[#666]">Browser tab title, search engine details</p>
+            </div>
+          </div>
+        </div>
+        <div class="p-5 space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Site Title Format</label>
+            <input type="text" data-field="branding.seo.title" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Meta Description</label>
+            <textarea data-field="branding.seo.description" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition resize-y min-h-[80px]"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ THEME COLORS ═══ -->
+      <section class="bg-[#1a1a1a] border border-[#272727] rounded-2xl overflow-hidden">
+        <div class="flex items-center justify-between p-5 border-b border-[#272727]">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+              <svg class="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25l7.22-7.22C10.984 9.266 11.25 8.75 11.25 8.25v-1.5c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V8.25c0 .499.266.998.63 1.38l6.401 6.402a3.75 3.75 0 01-5.304 5.304l-6.402-6.402" />
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-base font-semibold text-[#f1f1f1]">Theme Colors</h2>
+              <p class="text-xs text-[#666]">Primary gradients across the site</p>
+            </div>
+          </div>
+        </div>
+        <div class="p-5 grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Primary Color (From)</label>
+            <div class="flex gap-2">
+              <input type="color" data-field="branding.theme.primaryFrom" class="setting-input w-12 h-10 p-1 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg cursor-pointer" />
+              <input type="text" data-field="branding.theme.primaryFrom" class="setting-input flex-1 px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition uppercase font-mono" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Primary Color (To)</label>
+            <div class="flex gap-2">
+              <input type="color" data-field="branding.theme.primaryTo" class="setting-input w-12 h-10 p-1 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg cursor-pointer" />
+              <input type="text" data-field="branding.theme.primaryTo" class="setting-input flex-1 px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition uppercase font-mono" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ LOCALIZATION ═══ -->
+      <section class="bg-[#1a1a1a] border border-[#272727] rounded-2xl overflow-hidden">
+        <div class="flex items-center justify-between p-5 border-b border-[#272727]">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+              <svg class="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 01-3.827-5.802" />
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-base font-semibold text-[#f1f1f1]">Localization & UI Text</h2>
+              <p class="text-xs text-[#666]">Translate small labels like 'views', 'ago'</p>
+            </div>
+          </div>
+        </div>
+        <div class="p-5 grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">"Views" Text</label>
+            <input type="text" data-field="branding.localization.views" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">"Ago" Text</label>
+            <input type="text" data-field="branding.localization.ago" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">"Subscribers" Text</label>
+            <input type="text" data-field="branding.localization.subscribers" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">"SHORTS" Badge Text</label>
+            <input type="text" data-field="branding.localization.shortsBadge" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition" />
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ CATEGORIES ═══ -->
+      <section class="bg-[#1a1a1a] border border-[#272727] rounded-2xl overflow-hidden">
+        <div class="flex items-center justify-between p-5 border-b border-[#272727]">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center">
+              <svg class="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-base font-semibold text-[#f1f1f1]">Category Pills</h2>
+              <p class="text-xs text-[#666]">Tags shown above the video grid</p>
+            </div>
+          </div>
+          <button id="btn-add-category" class="flex items-center gap-1.5 px-3 py-1.5 bg-[#272727] hover:bg-[#3d3d3d] rounded-lg text-sm text-[#f1f1f1] transition cursor-pointer">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+            Add
+          </button>
+        </div>
+        <div id="categories-list" class="p-5">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+
+      <!-- ═══ SIDEBAR NAVIGATION ═══ -->
+      <section class="bg-[#1a1a1a] border border-[#272727] rounded-2xl overflow-hidden">
+        <div class="flex items-center gap-3 p-5 border-b border-[#272727]">
+          <div class="w-9 h-9 rounded-lg bg-orange-500/10 flex items-center justify-center">
+            <svg class="w-5 h-5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-base font-semibold text-[#f1f1f1]">Sidebar Navigation</h2>
+            <p class="text-xs text-[#666]">Manage the main menu links and sections</p>
+          </div>
+        </div>
+        <div id="sidebar-nav-list" class="p-5 space-y-6">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+
+      <!-- ═══ SECTION HEADINGS ═══ -->
+      <section class="bg-[#1a1a1a] border border-[#272727] rounded-2xl overflow-hidden">
+        <div class="flex items-center gap-3 p-5 border-b border-[#272727]">
+          <div class="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center">
+            <svg class="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-base font-semibold text-[#f1f1f1]">Section Headings</h2>
+            <p class="text-xs text-[#666]">Labels for content sections</p>
+          </div>
+        </div>
+        <div class="p-5 grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Recommended</label>
+            <input type="text" data-field="section_headings.recommended" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Shorts</label>
+            <input type="text" data-field="section_headings.shorts" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Trending</label>
+            <input type="text" data-field="section_headings.trending" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition" />
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ EMPTY STATE ═══ -->
+      <section class="bg-[#1a1a1a] border border-[#272727] rounded-2xl overflow-hidden">
+        <div class="flex items-center gap-3 p-5 border-b border-[#272727]">
+          <div class="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center">
+            <svg class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-base font-semibold text-[#f1f1f1]">Empty State</h2>
+            <p class="text-xs text-[#666]">Message shown when there are no videos</p>
+          </div>
+        </div>
+        <div class="p-5 space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Title</label>
+            <input type="text" data-field="empty_state.title" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-[#aaa] uppercase tracking-wider mb-1.5">Description</label>
+            <input type="text" data-field="empty_state.description" class="setting-input w-full px-4 py-2.5 bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg text-[#f1f1f1] text-sm focus:outline-none focus:border-red-600 transition" />
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ SIDEBAR FOOTER LINKS ═══ -->
+      <section class="bg-[#1a1a1a] border border-[#272727] rounded-2xl overflow-hidden">
+        <div class="flex items-center justify-between p-5 border-b border-[#272727]">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center">
+              <svg class="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-2.633a4.5 4.5 0 00-1.242-7.244l-4.5-4.5a4.5 4.5 0 00-6.364 6.364L4.34 8.374" />
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-base font-semibold text-[#f1f1f1]">Footer Links</h2>
+              <p class="text-xs text-[#666]">Links at the bottom of the sidebar</p>
+            </div>
+          </div>
+          <button id="btn-add-footer" class="flex items-center gap-1.5 px-3 py-1.5 bg-[#272727] hover:bg-[#3d3d3d] rounded-lg text-sm text-[#f1f1f1] transition cursor-pointer">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+            Add
+          </button>
+        </div>
+        <div id="footer-links-list" class="p-5">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 z-[120] hidden">
+    <div class="flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl border text-sm font-medium">
+      <span id="toast-message"></span>
+    </div>
+  </div>
+
+  <script>
+    // ─── Defaults (from siteConfig) ───
+    const defaults = {
+      branding: {
+        siteName: 'ClipX',
+        logoClip: 'Clip',
+        logoX: 'X',
+        searchPlaceholder: 'Search',
+        signInLabel: 'Sign in',
+        signInPrompt: 'Sign in to like videos, comment, and subscribe.',
+        createLabel: 'Create',
+        copyright: '© 2025 ClipX',
+        seo: { title: 'ClipX - Video Sharing Platform', description: 'The best place to watch and share videos.' },
+        theme: { primaryFrom: '#db2777', primaryTo: '#f43f5e' },
+        localization: { views: 'views', ago: 'ago', subscribers: 'subscribers', shortsBadge: 'SHORTS' }
+      },
+      sidebar: [
+        {
+          items: [
+            { icon: 'home', label: 'Home', href: '/', active: true },
+            { icon: 'shorts', label: 'Shorts', href: '/shorts' },
+            { icon: 'subscriptions', label: 'Subscriptions', href: '/subscriptions' },
+          ],
+        },
+        {
+          title: 'You',
+          items: [
+            { icon: 'user', label: 'Your channel', href: '/channel' },
+            { icon: 'history', label: 'History', href: '/history' },
+            { icon: 'playlist', label: 'Playlists', href: '/playlists' },
+            { icon: 'clock', label: 'Watch later', href: '/watch-later' },
+            { icon: 'thumbsUp', label: 'Liked videos', href: '/liked' },
+          ],
+        },
+        {
+          title: 'Explore',
+          items: [
+            { icon: 'flame', label: 'Trending', href: '/trending' },
+            { icon: 'shopping', label: 'Shopping', href: '/shopping' },
+            { icon: 'music', label: 'Music', href: '/music' },
+            { icon: 'film', label: 'Movies', href: '/movies' },
+            { icon: 'radio', label: 'Live', href: '/live' },
+            { icon: 'gamepad', label: 'Gaming', href: '/gaming' },
+            { icon: 'newspaper', label: 'News', href: '/news' },
+            { icon: 'trophy', label: 'Sports', href: '/sports' },
+            { icon: 'graduation', label: 'Courses', href: '/courses' },
+            { icon: 'podcast', label: 'Podcasts', href: '/podcasts' },
+          ],
+        },
+        {
+          title: 'More from ClipX',
+          items: [
+            { icon: 'premium', label: 'ClipX Premium', href: '/premium' },
+            { icon: 'musicNote', label: 'ClipX Music', href: '/clipx-music' },
+          ],
+        },
+      ],
+      categories: [
+        { label: 'All', active: true },
+        { label: 'Gaming', active: false },
+        { label: 'Music', active: false },
+        { label: 'Mixes', active: false },
+        { label: 'Live', active: false },
+        { label: 'Podcasts', active: false },
+        { label: 'Coding', active: false },
+        { label: 'AI', active: false },
+        { label: 'Cooking', active: false },
+        { label: 'Sports', active: false },
+      ],
+      section_headings: { recommended: 'Recommended', shorts: 'Shorts', trending: 'Trending' },
+      empty_state: { title: 'No videos available', description: 'Check back later for new content from your favorite creators.' },
+      sidebar_footer: ['About', 'Press', 'Copyright', 'Contact us', 'Creators', 'Advertise', 'Developers', 'Terms', 'Privacy', 'Policy & Safety'],
+    };
+
+    let settings: any = null;
+    let saveTimeout: any = null;
+
+    const loadingEl = document.getElementById('settings-loading')!;
+    const contentEl = document.getElementById('settings-content')!;
+    const toast = document.getElementById('toast')!;
+    const toastMessage = document.getElementById('toast-message')!;
+
+    function showToast(message: string, type: 'success' | 'error' = 'success') {
+      const wrapper = toast.querySelector('div')!;
+      wrapper.className = `flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl border text-sm font-medium ${
+        type === 'success'
+          ? 'bg-green-500/10 border-green-500/30 text-green-400'
+          : 'bg-red-500/10 border-red-500/30 text-red-400'
+      }`;
+      toastMessage.textContent = message;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+
+    // ─── Load Settings ───
+    async function loadSettings() {
+      try {
+        const res = await fetch('/api/settings');
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({}));
+          const errMsg = errBody.error || 'Unknown error';
+          const errCode = errBody.code || '';
+          
+          // If table doesn't exist, show the SQL to create it
+          if (errCode === '42P01' || errMsg.includes('does not exist') || errMsg.includes('relation')) {
+            loadingEl.innerHTML = `
+              <div class="max-w-lg text-center">
+                <svg class="w-12 h-12 text-amber-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+                <p class="text-[#f1f1f1] font-medium mb-2">Table not found</p>
+                <p class="text-sm text-[#aaa] mb-4">Run this SQL in your Supabase SQL Editor:</p>
+                <pre class="text-left text-xs bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg p-4 text-green-400 overflow-x-auto mb-4"><code>CREATE TABLE public.site_settings (
+    id TEXT PRIMARY KEY DEFAULT 'main',
+    branding JSONB DEFAULT '{}',
+    sidebar JSONB DEFAULT '[]',
+    sidebar_footer JSONB DEFAULT '[]',
+    categories JSONB DEFAULT '[]',
+    section_headings JSONB DEFAULT '{}',
+    empty_state JSONB DEFAULT '{}',
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+INSERT INTO public.site_settings (id) VALUES ('main');</code></pre>
+                <p class="text-xs text-[#666]">Then refresh this page.</p>
+              </div>
+            `;
+          } else if (errCode === '42501' || errMsg.includes('row-level security')) {
+            loadingEl.innerHTML = `
+              <div class="max-w-lg text-center">
+                <svg class="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <p class="text-[#f1f1f1] font-medium mb-2">Permission Denied (RLS)</p>
+                <p class="text-sm text-[#aaa] mb-4">Row-Level Security is blocking access to the settings table. Run this SQL in your Supabase SQL Editor:</p>
+                <pre class="text-left text-xs bg-[#0f0f0f] border border-[#3d3d3d] rounded-lg p-4 text-green-400 overflow-x-auto mb-4"><code>ALTER TABLE public.site_settings DISABLE ROW LEVEL SECURITY;</code></pre>
+                <p class="text-xs text-[#666]">Then refresh this page.</p>
+              </div>
+            `;
+          } else {
+            loadingEl.innerHTML = `<p class="text-red-400 text-sm">${errMsg}</p>`;
+          }
+          return;
+        }
+        settings = await res.json();
+
+        // Merge with defaults for any missing fields
+        settings.branding = { ...defaults.branding, ...(settings.branding || {}) };
+        settings.branding.seo = settings.branding.seo || defaults.branding.seo;
+        settings.branding.theme = settings.branding.theme || defaults.branding.theme;
+        settings.branding.localization = settings.branding.localization || defaults.branding.localization;
+        
+        settings.sidebar = settings.sidebar?.length ? settings.sidebar : defaults.sidebar;
+        settings.categories = settings.categories?.length ? settings.categories : defaults.categories;
+        settings.section_headings = { ...defaults.section_headings, ...(settings.section_headings || {}) };
+        settings.empty_state = { ...defaults.empty_state, ...(settings.empty_state || {}) };
+        settings.sidebar_footer = settings.sidebar_footer?.length ? settings.sidebar_footer : defaults.sidebar_footer;
+
+        populateFields();
+        renderSidebarNav();
+        renderCategories();
+        renderFooterLinks();
+
+        loadingEl.classList.add('hidden');
+        contentEl.classList.remove('hidden');
+        document.getElementById('btn-save-all')!.classList.remove('hidden');
+      } catch (err: any) {
+        loadingEl.innerHTML = `<p class="text-red-400 text-sm">${err.message}. Make sure the site_settings table exists.</p>`;
+      }
+    }
+
+    // ─── Populate simple fields ───
+    function populateFields() {
+      document.querySelectorAll('.setting-input').forEach((input) => {
+        const field = (input as HTMLInputElement).dataset.field!;
+        const [section, sub, key] = field.split('.');
+        let value = '';
+        if (key) {
+           value = settings[section]?.[sub]?.[key] ?? '';
+        } else {
+           value = settings[section]?.[sub] ?? '';
+        }
+        (input as HTMLInputElement).value = value;
+      });
+    }
+
+    // ─── Update state on input (no auto-save) ───
+    document.addEventListener('input', (e) => {
+      const target = e.target as HTMLInputElement;
+      if (!target.classList.contains('setting-input') || !target.dataset.field) return;
+
+      const [section, sub, key] = target.dataset.field.split('.');
+      if (!settings[section]) settings[section] = {};
+      if (key) {
+        if (!settings[section][sub]) settings[section][sub] = {};
+        settings[section][sub][key] = target.value;
+      } else {
+        settings[section][sub] = target.value;
+      }
+    });
+
+    // ─── Explicit Save Button ───
+    document.getElementById('btn-save-all')!.addEventListener('click', async () => {
+      const btn = document.getElementById('btn-save-all')!;
+      btn.innerHTML = '<div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Saving...';
+      btn.setAttribute('disabled', 'true');
+
+      try {
+        const res = await fetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings),
+        });
+        
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || 'Save failed');
+        }
+        
+        showToast('Settings saved successfully!');
+      } catch (err: any) {
+        showToast(err.message, 'error');
+      } finally {
+        btn.removeAttribute('disabled');
+        btn.innerHTML = 'Save Settings';
+      }
+    });
+
+    // ─── Sidebar Navigation ───
+    function renderSidebarNav() {
+      const container = document.getElementById('sidebar-nav-list')!;
+      container.innerHTML = settings.sidebar.map((section: any, sIdx: number) => `
+        <div class="space-y-3 bg-[#0f0f0f] p-4 rounded-xl border border-[#272727]">
+          <div class="flex items-center gap-3">
+            <input type="text" value="${section.title || ''}" placeholder="Section Title (optional)" data-sb-title="${sIdx}" class="bg-transparent border-b border-[#3d3d3d] text-[#f1f1f1] text-sm font-semibold focus:outline-none focus:border-red-600 pb-1" />
+            <button data-sb-rm-sec="${sIdx}" class="text-xs text-red-400 hover:underline ml-auto">Remove Section</button>
+          </div>
+          <div class="space-y-2">
+            ${section.items.map((item: any, iIdx: number) => `
+              <div class="flex items-center gap-2">
+                <input type="text" value="${item.label}" data-sb-lbl="${sIdx}-${iIdx}" class="w-1/3 px-3 py-1.5 bg-[#1a1a1a] border border-[#3d3d3d] rounded text-[#f1f1f1] text-xs" placeholder="Label" />
+                <input type="text" value="${item.href}" data-sb-href="${sIdx}-${iIdx}" class="w-1/3 px-3 py-1.5 bg-[#1a1a1a] border border-[#3d3d3d] rounded text-[#f1f1f1] text-xs font-mono text-[11px]" placeholder="URL (/path)" />
+                <input type="text" value="${item.icon}" data-sb-icon="${sIdx}-${iIdx}" class="flex-1 px-3 py-1.5 bg-[#1a1a1a] border border-[#3d3d3d] rounded text-[#f1f1f1] text-xs" placeholder="Icon ID" />
+                <button data-sb-rm-itm="${sIdx}-${iIdx}" class="w-7 h-7 flex items-center justify-center rounded bg-red-500/10 text-red-400 hover:bg-red-500/20">
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+            `).join('')}
+            <button data-sb-add-itm="${sIdx}" class="text-xs text-blue-400 hover:underline mt-2 inline-block">+ Add Link</button>
+          </div>
+        </div>
+      `).join('') + `
+        <button id="btn-add-sb-sec" class="w-full py-2 border border-dashed border-[#3d3d3d] rounded-xl text-sm text-[#aaa] hover:text-[#f1f1f1] hover:border-[#666] transition">
+          + Add New Section
+        </button>
+      `;
+
+      // Event listeners for inputs
+      container.querySelectorAll('input[data-sb-title]').forEach(el => {
+        el.addEventListener('input', (e) => {
+          const idx = parseInt((e.target as HTMLInputElement).dataset.sbTitle!);
+          settings.sidebar[idx].title = (e.target as HTMLInputElement).value;
+        });
+      });
+      container.querySelectorAll('input[data-sb-lbl]').forEach(el => {
+        el.addEventListener('input', (e) => {
+          const [sIdx, iIdx] = (e.target as HTMLInputElement).dataset.sbLbl!.split('-').map(Number);
+          settings.sidebar[sIdx].items[iIdx].label = (e.target as HTMLInputElement).value;
+        });
+      });
+      container.querySelectorAll('input[data-sb-href]').forEach(el => {
+        el.addEventListener('input', (e) => {
+          const [sIdx, iIdx] = (e.target as HTMLInputElement).dataset.sbHref!.split('-').map(Number);
+          settings.sidebar[sIdx].items[iIdx].href = (e.target as HTMLInputElement).value;
+        });
+      });
+      container.querySelectorAll('input[data-sb-icon]').forEach(el => {
+        el.addEventListener('input', (e) => {
+          const [sIdx, iIdx] = (e.target as HTMLInputElement).dataset.sbIcon!.split('-').map(Number);
+          settings.sidebar[sIdx].items[iIdx].icon = (e.target as HTMLInputElement).value;
+        });
+      });
+
+      // Buttons
+      container.querySelectorAll('button[data-sb-rm-sec]').forEach(el => {
+        el.addEventListener('click', (e) => {
+          const idx = parseInt((e.currentTarget as HTMLElement).dataset.sbRmSec!);
+          settings.sidebar.splice(idx, 1);
+          renderSidebarNav();
+        });
+      });
+      container.querySelectorAll('button[data-sb-rm-itm]').forEach(el => {
+        el.addEventListener('click', (e) => {
+          const [sIdx, iIdx] = (e.currentTarget as HTMLElement).dataset.sbRmItm!.split('-').map(Number);
+          settings.sidebar[sIdx].items.splice(iIdx, 1);
+          renderSidebarNav();
+        });
+      });
+      container.querySelectorAll('button[data-sb-add-itm]').forEach(el => {
+        el.addEventListener('click', (e) => {
+          const idx = parseInt((e.currentTarget as HTMLElement).dataset.sbAddItm!);
+          settings.sidebar[idx].items.push({ icon: 'star', label: 'New Link', href: '/' });
+          renderSidebarNav();
+        });
+      });
+      document.getElementById('btn-add-sb-sec')?.addEventListener('click', () => {
+        settings.sidebar.push({ title: 'New Section', items: [] });
+        renderSidebarNav();
+      });
+    }
+
+    // ─── Categories ───
+    function renderCategories() {
+      const container = document.getElementById('categories-list')!;
+      container.innerHTML = `
+        <div class="flex flex-wrap gap-2">
+          ${settings.categories.map((cat: any, i: number) => `
+            <div class="group flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm ${cat.active ? 'bg-[#f1f1f1] text-[#0f0f0f]' : 'bg-[#272727] text-[#f1f1f1]'} relative">
+              <input type="text" value="${cat.label}" data-cat-idx="${i}" class="cat-label bg-transparent border-none outline-none w-auto text-sm font-medium ${cat.active ? 'text-[#0f0f0f]' : 'text-[#f1f1f1]'}" style="width: ${Math.max(cat.label.length * 8, 30)}px" />
+              <button data-cat-remove="${i}" class="w-4 h-4 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-500/20 transition cursor-pointer shrink-0">
+                <svg class="w-3 h-3 ${cat.active ? 'text-[#0f0f0f]' : 'text-red-400'}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      // Edit handlers
+      container.querySelectorAll('.cat-label').forEach((input) => {
+        input.addEventListener('input', (e) => {
+          const idx = parseInt((e.target as HTMLInputElement).dataset.catIdx!);
+          settings.categories[idx].label = (e.target as HTMLInputElement).value;
+          (e.target as HTMLInputElement).style.width = Math.max((e.target as HTMLInputElement).value.length * 8, 30) + 'px';
+        });
+      });
+
+      // Remove handlers
+      container.querySelectorAll('[data-cat-remove]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt((btn as HTMLElement).dataset.catRemove!);
+          settings.categories.splice(idx, 1);
+          renderCategories();
+        });
+      });
+    }
+
+    document.getElementById('btn-add-category')!.addEventListener('click', () => {
+      settings.categories.push({ label: 'New', active: false });
+      renderCategories();
+    });
+
+    // ─── Footer Links ───
+    function renderFooterLinks() {
+      const container = document.getElementById('footer-links-list')!;
+      container.innerHTML = `
+        <div class="flex flex-wrap gap-2">
+          ${settings.sidebar_footer.map((link: string, i: number) => `
+            <div class="group flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#272727] text-sm text-[#f1f1f1]">
+              <input type="text" value="${link}" data-footer-idx="${i}" class="footer-label bg-transparent border-none outline-none w-auto text-sm text-[#f1f1f1]" style="width: ${Math.max(link.length * 8, 30)}px" />
+              <button data-footer-remove="${i}" class="w-4 h-4 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-500/20 transition cursor-pointer shrink-0">
+                <svg class="w-3 h-3 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      container.querySelectorAll('.footer-label').forEach((input) => {
+        input.addEventListener('input', (e) => {
+          const idx = parseInt((e.target as HTMLInputElement).dataset.footerIdx!);
+          settings.sidebar_footer[idx] = (e.target as HTMLInputElement).value;
+          (e.target as HTMLInputElement).style.width = Math.max((e.target as HTMLInputElement).value.length * 8, 30) + 'px';
+        });
+      });
+
+      container.querySelectorAll('[data-footer-remove]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt((btn as HTMLElement).dataset.footerRemove!);
+          settings.sidebar_footer.splice(idx, 1);
+          renderFooterLinks();
+        });
+      });
+    }
+
+    document.getElementById('btn-add-footer')!.addEventListener('click', () => {
+      settings.sidebar_footer.push('New Link');
+      renderFooterLinks();
+    });
+
+    // ─── Init ───
+    loadSettings();
+  </script>
+</Layout>

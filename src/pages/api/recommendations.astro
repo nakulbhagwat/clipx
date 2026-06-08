@@ -1,0 +1,46 @@
+---
+export const partial = true;
+import { getRelatedVideos } from '../../lib/youtube';
+
+const videoId = Astro.url.searchParams.get('v');
+const pageToken = Astro.url.searchParams.get('pageToken');
+
+if (!videoId || !pageToken) {
+  return new Response(null, { status: 400 });
+}
+
+const { videos, nextPageToken } = await getRelatedVideos(videoId, 12, pageToken);
+---
+
+{videos.map((rec: any) => (
+  <a href={`/watch?v=${rec.id}`} class="group cursor-pointer block">
+    <div class="relative aspect-video rounded-2xl overflow-hidden bg-[#111111] transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_12px_30px_rgba(0,0,0,0.8)] border border-transparent group-hover:border-[#2a2a2a]">
+      <img src={rec.thumbnail} alt={rec.title} class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500 ease-out" loading="lazy" decoding="async" />
+      <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"></div>
+      {rec.duration && (
+        <div class:list={['absolute bottom-2 right-2 px-1 py-0.5 rounded text-xs font-medium text-white', rec.duration === 'LIVE' ? 'bg-red-600 uppercase tracking-wider text-[11px]' : 'bg-black/80']}>
+          {rec.duration === 'LIVE' ? '● LIVE' : rec.duration}
+        </div>
+      )}
+      <div class="absolute bottom-0 left-0 right-0 h-1 bg-transparent group-hover:bg-[#f1f1f1]/20 transition-colors duration-300">
+        <div class="h-full bg-[var(--primary-from)] w-0 group-hover:w-1/3 transition-all duration-1000 ease-out"></div>
+      </div>
+    </div>
+    <div class="flex gap-3 mt-3">
+      <div class="shrink-0 mt-0.5">
+        <img src={rec.author.avatar} alt={rec.author.name} class="w-9 h-9 rounded-full object-cover" />
+      </div>
+      <div class="min-w-0 flex-1">
+        <h3 class="text-[15px] font-bold text-[#f5f5f5] line-clamp-2 leading-tight group-hover:text-[#e50914] transition-colors duration-200">{rec.title}</h3>
+        <p class="text-[13px] font-medium text-[#a3a3a3] mt-1.5">{rec.author.name}</p>
+        <div class="flex items-center text-[13px] font-medium text-[#777] mt-0.5">
+          <span>{new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(rec.views)} views</span>
+          <span class="mx-1.5">•</span>
+          <span>{rec.timestamp}</span>
+        </div>
+      </div>
+    </div>
+  </a>
+))}
+
+<div id="next-page-token-holder" data-token={nextPageToken || ''} class="hidden"></div>

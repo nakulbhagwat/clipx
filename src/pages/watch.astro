@@ -1,0 +1,292 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Sidebar from '../components/Sidebar.astro';
+import CategoryPills from '../components/CategoryPills.astro';
+import { loadSiteConfig } from '../config/clipx';
+import { getVideoDetails, getRelatedVideos } from '../lib/youtube';
+import { isYouTubeUrl, getYouTubeId } from '../utils/youtube';
+
+const siteConfig = await loadSiteConfig();
+const videoId = Astro.url.searchParams.get('v');
+
+let video = siteConfig.watchData.video;
+let notFound = false;
+
+if (videoId) {
+  const data = await getVideoDetails(videoId);
+  if (data) {
+    video = data;
+  } else {
+    notFound = true;
+  }
+}
+
+const { comments } = siteConfig.watchData;
+
+// Fetch related videos from YouTube
+let recommendedVideos: any[] = [];
+let initialNextPageToken = '';
+if (videoId && !notFound) {
+  const result = await getRelatedVideos(videoId, 12);
+  recommendedVideos = result.videos;
+  initialNextPageToken = result.nextPageToken || '';
+}
+---
+
+<Layout 
+	title={`${video?.title} - ${siteConfig.branding.siteName}`} 
+	description={video?.description || siteConfig.branding.seo?.description}
+	pageType="watch"
+	theme={siteConfig.branding.theme}
+>
+	<Header branding={siteConfig.branding} />
+  <Sidebar sidebarSections={siteConfig.sidebar} sidebarFooter={siteConfig.sidebarFooter} branding={siteConfig.branding} />
+  
+  <div class="max-w-[1750px] mx-auto px-4 sm:px-6 pt-[72px] pb-16">
+    {notFound ? (
+      <div class="flex flex-col items-center justify-center py-32 text-center">
+        <svg class="w-24 h-24 text-[#3d3d3d] mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <h1 class="text-3xl font-bold text-[#f1f1f1] mb-4">Video not found</h1>
+        <a href="/" class="px-6 py-3 bg-[#e50914] text-white rounded-full font-bold hover:bg-[#b91c1c] transition cursor-pointer shadow-lg">Return Home</a>
+      </div>
+    ) : (
+      <>
+        <div class="flex flex-col lg:flex-row gap-6">
+        
+        {/* LEFT COLUMN: Player & Details */}
+        <div class="flex-1 min-w-0">
+          {/* Native HTML5 Video Player */}
+          <div class="relative w-full">
+            {/* Ambient Glow */}
+            {video.thumbnail && (
+              <div class="absolute inset-0 bg-cover bg-center blur-[100px] opacity-40 transform scale-110 pointer-events-none" style={`background-image: url('${video.thumbnail}')`}></div>
+            )}
+            <div class="aspect-video bg-black rounded-2xl overflow-hidden relative shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-10 border border-[#1f1f1f]">
+              {video.videoUrl ? (
+                isYouTubeUrl(video.videoUrl) ? (
+                  <iframe 
+                    class="w-full h-full border-none"
+                    src={`https://www.youtube.com/embed/${getYouTubeId(video.videoUrl)}?autoplay=1&rel=0&playsinline=1`} 
+                    title={video.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                    allowfullscreen>
+                  </iframe>
+                ) : (
+                  <video 
+                    src={video.videoUrl} 
+                    controls 
+                    class="w-full h-full object-contain focus:outline-none"
+                    autoplay
+                    poster={video.thumbnail || ''}
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                )
+            ) : (
+              <div class="absolute inset-0 flex flex-col items-center justify-center bg-[#1a1a1a]">
+                <svg class="w-16 h-16 text-[#3d3d3d] mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <p class="text-[#aaa] font-medium">Video URL Not Configured</p>
+                <p class="text-sm text-[#777] mt-2 text-center max-w-sm">Please ensure this video has a valid `video_url` from your Supabase Storage.</p>
+              </div>
+            )}
+            </div>
+          </div>
+
+          {/* Video Info */}
+          <h1 class="text-[22px] font-bold text-[#f5f5f5] mt-6 mb-2 leading-tight">{video.title}</h1>
+          
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-3">
+            {/* Channel Info */}
+            <div class="flex items-center gap-4">
+              <img src={video.author.avatar} alt={video.author.name} class="w-10 h-10 rounded-full cursor-pointer" />
+              <div class="cursor-pointer">
+                <div class="flex items-center gap-1">
+                  <span class="font-medium text-[#f1f1f1] text-base">{video.author.name}</span>
+                  {video.author.isVerified && (
+                     <svg class="w-3.5 h-3.5 text-[#aaa]" viewBox="0 0 24 24" fill="currentColor">
+                       <path d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                     </svg>
+                  )}
+                </div>
+                <div class="text-[12px] text-[#aaa]">{video.author.subscribers} subscribers</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Description Box */}
+          {video.description && video.description !== 'No description available.' && (
+            <div id="description-box" class="mt-4 bg-[#111111] border border-[#1f1f1f] rounded-2xl p-4 sm:p-5 hover:bg-[#151515] transition cursor-pointer">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2 text-[15px] font-bold text-[#f5f5f5]">
+                  <span>{new Intl.NumberFormat('en-US', { notation: 'compact' }).format(video.views)} views</span>
+                  <span>{video.timestamp}</span>
+                </div>
+                <button id="desc-toggle-btn" class="p-1 rounded-full hover:bg-[#272727] transition" aria-label="Toggle description">
+                  <svg class="w-5 h-5 text-[#f5f5f5] transform transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                    <circle cx="5" cy="12" r="2"/>
+                    <circle cx="12" cy="12" r="2"/>
+                    <circle cx="19" cy="12" r="2"/>
+                  </svg>
+                </button>
+              </div>
+              <p id="desc-content" class="text-sm text-[#d1d1d1] whitespace-pre-wrap leading-relaxed hidden">{video.description}</p>
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT COLUMN: Recommended Videos */}
+        <div class="w-full lg:w-[400px] shrink-0 mt-8 lg:mt-0">
+          <h3 class="text-lg font-bold mb-4 text-[#f1f1f1]">Up next</h3>
+          <div class="flex flex-col gap-3">
+            {recommendedVideos.slice(0, 4).map((rec) => (
+              <a href={`/watch?v=${rec.id}`} class="flex gap-2 group cursor-pointer">
+                <div class="relative w-[168px] shrink-0 rounded-xl overflow-hidden bg-[#111111]">
+                  <img src={rec.thumbnail} alt={rec.title} class="w-full aspect-video object-cover group-hover:scale-105 transition duration-300" loading="lazy" decoding="async" />
+                  <div class="absolute bottom-1 right-1 bg-black/80 px-1 py-0.5 rounded text-[10px] font-medium text-white">
+                    {rec.duration === 'LIVE' ? '● LIVE' : rec.duration}
+                  </div>
+                  {/* Fake progress bar */}
+                  <div class="absolute bottom-0 left-0 right-0 h-1 bg-transparent group-hover:bg-[#f1f1f1]/20 transition-colors duration-300">
+                    <div class="h-full bg-[var(--primary-from)] w-0 group-hover:w-1/3 transition-all duration-1000 ease-out"></div>
+                  </div>
+                </div>
+                <div class="flex-1 min-w-0 py-0.5">
+                  <h3 class="text-sm font-medium text-[#f1f1f1] line-clamp-2 leading-tight group-hover:text-[#e50914] transition-colors duration-200">{rec.title}</h3>
+                  <p class="text-xs text-[#aaa] mt-1 hover:text-[#f1f1f1] transition">{rec.author.name}</p>
+                  <div class="text-xs text-[#aaa] mt-0.5">
+                    {new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(rec.views)} views • {rec.timestamp}
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+        
+      </div>
+
+      {/* Bottom Recommended Videos */}
+      <div class="mt-12 pt-8 border-t border-[#1f1f1f]">
+        <h3 class="text-xl font-bold mb-6 text-[#f1f1f1]">More Videos</h3>
+        <div id="more-videos-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
+          {recommendedVideos.slice(4).map((rec) => (
+            <a href={`/watch?v=${rec.id}`} class="group cursor-pointer block">
+              <div class="relative aspect-video rounded-2xl overflow-hidden bg-[#111111] transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_12px_30px_rgba(0,0,0,0.8)] border border-transparent group-hover:border-[#2a2a2a]">
+                <img src={rec.thumbnail} alt={rec.title} class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500 ease-out" loading="lazy" decoding="async" />
+                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"></div>
+                {rec.duration && (
+                  <div class:list={['absolute bottom-2 right-2 px-1 py-0.5 rounded text-xs font-medium text-white', rec.duration === 'LIVE' ? 'bg-red-600 uppercase tracking-wider text-[11px]' : 'bg-black/80']}>
+                    {rec.duration === 'LIVE' ? '● LIVE' : rec.duration}
+                  </div>
+                )}
+                <div class="absolute bottom-0 left-0 right-0 h-1 bg-transparent group-hover:bg-[#f1f1f1]/20 transition-colors duration-300">
+                  <div class="h-full bg-[var(--primary-from)] w-0 group-hover:w-1/3 transition-all duration-1000 ease-out"></div>
+                </div>
+              </div>
+              <div class="flex gap-3 mt-3">
+                <div class="shrink-0 mt-0.5">
+                  <img src={rec.author.avatar} alt={rec.author.name} class="w-9 h-9 rounded-full object-cover" />
+                </div>
+                <div class="min-w-0 flex-1">
+                  <h3 class="text-[15px] font-bold text-[#f5f5f5] line-clamp-2 leading-tight group-hover:text-[#e50914] transition-colors duration-200">{rec.title}</h3>
+                  <p class="text-[13px] font-medium text-[#a3a3a3] mt-1.5">{rec.author.name}</p>
+                  <div class="flex items-center text-[13px] font-medium text-[#777] mt-0.5">
+                    <span>{new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(rec.views)} views</span>
+                    <span class="mx-1.5">•</span>
+                    <span>{rec.timestamp}</span>
+                  </div>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+
+        {/* Infinite Scroll Trigger */}
+        <div id="infinite-scroll-trigger" class="w-full h-20 flex items-center justify-center mt-8" data-next-page={initialNextPageToken} data-video-id={videoId}>
+          <svg class="w-8 h-8 text-[#e50914] animate-spin opacity-0 transition-opacity" id="infinite-scroll-spinner" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+             <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </div>
+      </div>
+      </>
+    )}
+  </div>
+
+  <script>
+    // Infinite Scroll Logic
+    const trigger = document.getElementById('infinite-scroll-trigger');
+    const spinner = document.getElementById('infinite-scroll-spinner');
+    const grid = document.getElementById('more-videos-grid');
+    
+    if (trigger && grid && window.IntersectionObserver) {
+      let isLoading = false;
+      const observer = new IntersectionObserver(async (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && !isLoading) {
+          const nextPageToken = trigger.dataset.nextPage;
+          const videoId = trigger.dataset.videoId;
+          
+          if (!nextPageToken || !videoId) return;
+          
+          isLoading = true;
+          if (spinner) spinner.classList.remove('opacity-0');
+          
+          try {
+            const res = await fetch(`/api/recommendations?v=${videoId}&pageToken=${nextPageToken}`);
+            if (res.ok) {
+              const html = await res.text();
+              const temp = document.createElement('div');
+              temp.innerHTML = html;
+              
+              const tokenHolder = temp.querySelector('#next-page-token-holder');
+              if (tokenHolder) {
+                 trigger.dataset.nextPage = tokenHolder.getAttribute('data-token') || '';
+                 tokenHolder.remove();
+              } else {
+                 trigger.dataset.nextPage = '';
+              }
+              
+              grid.insertAdjacentHTML('beforeend', temp.innerHTML);
+            }
+          } catch (e) {
+            console.error('Infinite scroll failed', e);
+          } finally {
+            isLoading = false;
+            if (spinner) spinner.classList.add('opacity-0');
+          }
+        }
+      }, { rootMargin: '400px' });
+      observer.observe(trigger);
+    }
+
+    // Description Toggle
+    const descBox = document.getElementById('description-box');
+    const descContent = document.getElementById('desc-content');
+    const toggleBtn = document.getElementById('desc-toggle');
+    let isExpanded = false;
+    
+    if (descBox && descContent) {
+      descBox.addEventListener('click', () => {
+        descContent.classList.toggle('hidden');
+      });
+    }
+  </script>
+  <script define:vars={{ videoId }}>
+    // Track watch history in a cookie for personalized homepage feeds
+    if (videoId) {
+      let history = [];
+      try {
+        const match = document.cookie.match(/(?:^|;\s*)clipx_history=([^;]*)/);
+        if (match) history = JSON.parse(decodeURIComponent(match[1]));
+      } catch (e) {}
+      
+      // Add to front, remove duplicates, keep last 10
+      history = [videoId, ...history.filter(id => id !== videoId)].slice(0, 10);
+      document.cookie = `clipx_history=${encodeURIComponent(JSON.stringify(history))}; path=/; max-age=31536000; SameSite=Lax`;
+    }
+  </script>
+</Layout>

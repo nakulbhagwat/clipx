@@ -1,0 +1,225 @@
+---
+import { siteConfig } from '../config/clipx';
+import { supabaseServer } from '../lib/supabase';
+
+interface Props {
+  branding?: typeof siteConfig.branding;
+}
+
+const branding = Astro.props.branding || siteConfig.branding;
+const { searchPlaceholder, signInLabel, createLabel } = branding;
+
+const supabase = supabaseServer(Astro.cookies);
+const { data: { session } } = await supabase.auth.getSession();
+const user = session?.user;
+
+let profile = null;
+if (user) {
+  const { data } = await supabase.from('channels').select('avatar_url, handle, is_admin').eq('id', user.id).single();
+  profile = data;
+}
+---
+
+<header class="sticky top-0 z-50 h-16 bg-[#000000]/80 backdrop-blur-xl border-b border-[#1f1f1f] flex items-center px-4 gap-4">
+	{/* Left: Logo */}
+	<div class="flex items-center gap-3 min-w-[180px] lg:min-w-[212px]">
+		<a href="/" class="flex items-center gap-1.5 select-none shrink-0 group ml-2" aria-label="ClipX Home">
+			{/* Custom SVG Play Button */}
+			<svg class="w-10 h-10 transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_0_12px_rgba(229,9,20,0.6)]" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+				<path d="M10.5 8.35C10.5 5.86 13.2 4.3 15.36 5.54L28.12 12.89C30.28 14.13 30.28 17.25 28.12 18.49L15.36 25.84C13.2 27.08 10.5 25.52 10.5 23.03V8.35Z" stroke="url(#outerGrad)" stroke-width="2.5" stroke-linejoin="round"/>
+				<path d="M15 12.35C15 10.86 16.62 9.93 17.91 10.67L25.57 15.09C26.86 15.83 26.86 17.71 25.57 18.45L17.91 22.87C16.62 23.61 15 22.68 15 21.19V12.35Z" fill="url(#innerGrad)"/>
+				<defs>
+					<linearGradient id="outerGrad" x1="10" y1="4" x2="29" y2="26" gradientUnits="userSpaceOnUse">
+						<stop offset="0%" stop-color="#ffffff" />
+						<stop offset="40%" stop-color="#e50914" />
+						<stop offset="100%" stop-color="#3b0000" />
+					</linearGradient>
+					<linearGradient id="innerGrad" x1="15" y1="10" x2="26" y2="23" gradientUnits="userSpaceOnUse">
+						<stop offset="0%" stop-color="#ff4d4d" />
+						<stop offset="100%" stop-color="#b91c1c" />
+					</linearGradient>
+				</defs>
+			</svg>
+			{/* 'ClipX' text */}
+			<span class="font-black italic text-[30px] leading-none tracking-tight ml-0.5 flex items-baseline select-none">
+				<span class="text-white drop-shadow-md">Clip</span><span class="text-[#e50914] drop-shadow-[0_0_8px_rgba(229,9,20,0.6)]">X</span>
+			</span>
+		</a>
+	</div>
+
+	{/* Center: Search Bar Group */}
+	<div class="flex-1 flex justify-center max-w-[640px] mx-auto">
+		<div class="hidden sm:flex w-full">
+			<form action="/search" method="get" class="flex flex-1 relative" id="search-form">
+				<input
+					type="text"
+					name="q"
+					id="search-input"
+					required
+					autocomplete="off"
+					placeholder={searchPlaceholder}
+					class="w-full px-5 py-2.5 bg-[#0a0a0a] border border-[#272727] rounded-l-full text-[#f5f5f5] text-sm placeholder-[#666] focus:outline-none focus:border-[#444] transition-colors"
+				/>
+				<button type="submit" class="px-6 bg-[#111111] border border-l-0 border-[#272727] rounded-r-full hover:bg-[#1a1a1a] transition-colors cursor-pointer" aria-label="Search">
+					<svg class="w-5 h-5 text-[#f5f5f5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+					</svg>
+				</button>
+
+				{/* Dropdown for Autocomplete */}
+				<div id="search-suggestions" class="absolute top-full left-0 right-16 mt-2 bg-[#1a1a1a] border border-[#272727] rounded-xl shadow-2xl overflow-hidden hidden z-[100]">
+					<ul id="suggestions-list" class="py-2 text-[#f1f1f1] text-sm font-medium"></ul>
+				</div>
+			</form>
+			<button class="ml-3 w-10 h-10 shrink-0 rounded-full bg-[#111111] border border-[#272727] hover:bg-[#1a1a1a] flex items-center justify-center transition-colors cursor-pointer" aria-label="Search with voice">
+				<svg class="w-5 h-5 text-[#f5f5f5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+				</svg>
+			</button>
+		</div>
+		{/* Mobile search icon */}
+		<button class="sm:hidden w-10 h-10 rounded-full hover:bg-[#1f1f1f] flex items-center justify-center transition-colors cursor-pointer" aria-label="Search">
+			<svg class="w-5 h-5 text-[#f1f1f1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+			</svg>
+		</button>
+	</div>
+
+	{/* Right: Create, Notifications, Sign In */}
+	<div class="flex items-center gap-2 min-w-[180px] lg:min-w-[212px] justify-end">
+		{/* Create button */}
+		<button class="hidden sm:flex w-10 h-10 items-center justify-center rounded-full hover:bg-[#1f1f1f] transition-colors cursor-pointer" aria-label={createLabel}>
+			<svg class="w-6 h-6 text-[#f5f5f5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+				<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72" />
+			</svg>
+		</button>
+		{/* Notifications */}
+		<button class="hidden sm:flex w-10 h-10 items-center justify-center rounded-full hover:bg-[#1f1f1f] transition-colors cursor-pointer relative" aria-label="Notifications">
+			<svg class="w-6 h-6 text-[#f5f5f5]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+			</svg>
+			{/* Notification badge */}
+			<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-[#f5f5f5] rounded-full"></span>
+		</button>
+		{/* Create Button (Only show if logged in, otherwise just hide or link to login) */}
+		<a href={user ? "/studio/upload" : "/login"} class="hidden sm:flex items-center gap-2 bg-[#e50914] text-white hover:bg-[#b91c1c] px-5 py-2 rounded-full text-sm font-bold transition-colors">
+			<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+			</svg>
+			{createLabel}
+		</a>
+
+		{user ? (
+			<div class="relative group ml-2">
+				<button class="w-9 h-9 rounded-full overflow-hidden border border-[#272727] hover:border-white transition-colors cursor-pointer focus:outline-none">
+					<img src={profile?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=fallback'} alt="Avatar" class="w-full h-full object-cover" />
+				</button>
+				{/* Dropdown menu */}
+				<div class="absolute right-0 top-full mt-2 w-56 bg-[#0a0a0a] border border-[#1f1f1f] rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100] overflow-hidden flex flex-col">
+					<div class="px-4 py-4 border-b border-[#1f1f1f] flex items-center gap-3">
+						<img src={profile?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=fallback'} class="w-10 h-10 rounded-full" />
+						<div class="overflow-hidden">
+							<p class="text-sm font-bold text-[#f5f5f5] truncate">{profile?.handle ? `@${profile.handle}` : user.email}</p>
+							<a href={`/@${profile?.handle}`} class="text-xs text-[#a3a3a3] hover:text-white transition-colors">View your channel</a>
+						</div>
+					</div>
+					<div class="py-2 flex flex-col">
+						{profile?.is_admin && (
+							<a href="/admin" class="px-4 py-2.5 text-sm text-[#f5f5f5] hover:bg-[#1f1f1f] flex items-center gap-3 transition-colors">
+								<svg class="w-5 h-5 text-[#888]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.527-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+								Admin Panel
+							</a>
+						)}
+						<a href="/studio" class="px-4 py-2.5 text-sm text-[#f5f5f5] hover:bg-[#1f1f1f] flex items-center gap-3 transition-colors">
+							<svg class="w-5 h-5 text-[#888]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
+							Creator Studio
+						</a>
+						<button id="btn-sign-out" class="w-full text-left px-4 py-2.5 text-sm text-[#f5f5f5] hover:bg-[#1f1f1f] flex items-center gap-3 transition-colors">
+							<svg class="w-5 h-5 text-[#888]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>
+							Sign out
+						</button>
+					</div>
+				</div>
+			</div>
+		) : (
+			<a href="/login" class="flex items-center gap-2 ml-1 px-5 py-2 bg-[#e50914] text-white hover:bg-[#b91c1c] rounded-full text-sm font-bold transition-colors">
+				<span class="hidden sm:inline">{signInLabel}</span>
+			</a>
+		)}
+	</div>
+</header>
+
+<script>
+	const btnSignOut = document.getElementById('btn-sign-out');
+	if (btnSignOut) {
+		btnSignOut.addEventListener('click', async () => {
+			await fetch('/api/auth/signout', { method: 'POST' });
+			window.location.href = '/';
+		});
+	}
+
+	// Autocomplete Logic
+	const searchInput = document.getElementById('search-input') as HTMLInputElement;
+	const searchSuggestions = document.getElementById('search-suggestions');
+	const suggestionsList = document.getElementById('suggestions-list');
+	const searchForm = document.getElementById('search-form') as HTMLFormElement;
+
+	if (searchInput && searchSuggestions && suggestionsList && searchForm) {
+		let timeout: any;
+		
+		searchInput.addEventListener('input', (e) => {
+			const q = (e.target as HTMLInputElement).value.trim();
+			clearTimeout(timeout);
+			
+			if (!q) {
+				searchSuggestions.classList.add('hidden');
+				return;
+			}
+
+			timeout = setTimeout(async () => {
+				try {
+					const res = await fetch(`/api/autocomplete?q=${encodeURIComponent(q)}`);
+					const data = await res.json();
+					
+					if (data.length > 0) {
+						suggestionsList.innerHTML = data.map((item: string) => `
+							<li class="px-4 py-2 hover:bg-[#272727] cursor-pointer flex items-center gap-3 transition">
+								<svg class="w-4 h-4 text-[#888]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+								</svg>
+								<span class="flex-1">${item}</span>
+							</li>
+						`).join('');
+						
+						const items = suggestionsList.querySelectorAll('li');
+						items.forEach((li, idx) => {
+							li.addEventListener('click', () => {
+								searchInput.value = data[idx];
+								searchForm.submit();
+							});
+						});
+
+						searchSuggestions.classList.remove('hidden');
+					} else {
+						searchSuggestions.classList.add('hidden');
+					}
+				} catch(err) {
+					console.error(err);
+				}
+			}, 150);
+		});
+
+		document.addEventListener('click', (e) => {
+			if (!searchForm.contains(e.target as Node)) {
+				searchSuggestions.classList.add('hidden');
+			}
+		});
+
+		searchInput.addEventListener('focus', () => {
+			if (suggestionsList.innerHTML.trim() !== '') {
+				searchSuggestions.classList.remove('hidden');
+			}
+		});
+	}
+</script>
