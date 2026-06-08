@@ -5,7 +5,7 @@ import Sidebar from '../components/Sidebar.astro';
 import CategoryPills from '../components/CategoryPills.astro';
 import VideoGrid from '../components/VideoGrid.astro';
 import ShortsShelf from '../components/ShortsShelf.astro';
-import { getRandomFeed } from '../lib/scrapers';
+import { getMixedFeed } from '../lib/scrapers';
 import { loadSiteConfig } from '../config/clipx';
 
 const config = await loadSiteConfig();
@@ -31,10 +31,10 @@ const topics = [
 
 try {
   currentTopic = topics[Math.floor(Math.random() * topics.length)];
-  const result = await getRandomFeed(currentTopic);
+  const result = await getMixedFeed(currentTopic, '0');
   mappedVideos = result.videos || [];
   trendingNextToken = result.nextPageToken || '';
-  currentSource = result.source || 'xvideos';
+  currentSource = 'mixed';
 } catch (e: any) {
   error = e.message;
 }

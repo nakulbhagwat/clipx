@@ -5,24 +5,24 @@ import Sidebar from '../components/Sidebar.astro';
 import VideoGrid from '../components/VideoGrid.astro';
 import CategoryPills from '../components/CategoryPills.astro';
 import { loadSiteConfig } from '../config/clipx';
-import { searchVideos } from '../lib/youtube';
+import { getMixedFeed } from '../lib/scrapers';
 
 const config = await loadSiteConfig();
 const query = Astro.url.searchParams.get('q') || '';
 
 let mappedVideos: any[] = [];
 let error = null;
+let nextPageToken = '';
 
 if (query) {
   try {
-    mappedVideos = await searchVideos(query, 24);
+    const result = await getMixedFeed(query, '0');
+    mappedVideos = result.videos || [];
+    nextPageToken = result.nextPageToken || '';
   } catch (e: any) {
     error = e.message;
   }
 }
-
-const standardVideos = mappedVideos.filter(v => !v.isShort);
-const shortsVideos = mappedVideos.filter(v => v.isShort);
 ---
 
 <Layout 
@@ -34,7 +34,7 @@ const shortsVideos = mappedVideos.filter(v => v.isShort);
 	<Sidebar sidebarSections={config.sidebar} sidebarFooter={config.sidebarFooter} branding={config.branding} />
 
 	<main class="main-content min-h-screen px-6 md:px-12 lg:px-16 xl:px-20 max-w-[2200px] mx-auto pt-[72px] pb-16">
-		{/* Category Pills (Keep them here so the user can filter again if they want) */}
+		{/* Category Pills */}
 		<div class="mb-6 sticky top-[120px] z-30 bg-[#000000] py-3 -mx-6 md:-mx-12 lg:-mx-16 xl:-mx-20 px-6 md:px-12 lg:px-16 xl:px-20 border-b border-[#1f1f1f]">
 			<CategoryPills categories={config.categories} />
 		</div>
@@ -43,14 +43,70 @@ const shortsVideos = mappedVideos.filter(v => v.isShort);
 
 		{error && (
 			<div class="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6">
-				<p class="text-red-400 font-medium text-sm">Failed to search YouTube: {error}</p>
+				<p class="text-red-400 font-medium text-sm">Failed to load results: {error}</p>
 			</div>
 		)}
 
-		{!error && standardVideos.length > 0 ? (
-			<VideoGrid videos={standardVideos} />
+		{!error && mappedVideos.length > 0 ? (
+			<VideoGrid videos={mappedVideos} />
 		) : !error && query ? (
             <p class="text-[#aaa]">No results found.</p>
         ) : null}
+
+		{/* Infinite scroll for search results */}
+		<div id="infinite-videos-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8 xl:gap-x-6 xl:gap-y-10 mt-12"></div>
+		<div id="infinite-scroll-trigger" class="w-full h-20 flex items-center justify-center mt-8" data-next-page={nextPageToken} data-query={query} data-source="mixed">
+			<svg class="w-8 h-8 text-[#e50914] animate-spin opacity-0 transition-opacity" id="infinite-scroll-spinner" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+			</svg>
+		</div>
 	</main>
+
+	<script>
+		const trigger = document.getElementById('infinite-scroll-trigger');
+		const spinner = document.getElementById('infinite-scroll-spinner');
+		const grid = document.getElementById('infinite-videos-grid');
+		
+		if (trigger && grid && window.IntersectionObserver) {
+			let isLoading = false;
+			const observer = new IntersectionObserver(async (entries) => {
+				const entry = entries[0];
+				if (entry.isIntersecting && !isLoading) {
+					const nextPageToken = trigger.dataset.nextPage;
+					const query = encodeURIComponent(trigger.dataset.query || '');
+					const source = trigger.dataset.source;
+          
+					if (!nextPageToken || !query) return;
+					
+					isLoading = true;
+					if (spinner) spinner.classList.remove('opacity-0');
+					
+					try {
+						const res = await fetch(`/api/feed?query=${query}&pageToken=${nextPageToken}&source=${source}`);
+						if (res.ok) {
+							const html = await res.text();
+							const temp = document.createElement('div');
+							temp.innerHTML = html;
+							
+							const tokenHolder = temp.querySelector('#next-page-token-holder');
+							if (tokenHolder) {
+								trigger.dataset.nextPage = tokenHolder.getAttribute('data-token') || '';
+								tokenHolder.remove();
+							} else {
+								trigger.dataset.nextPage = '';
+							}
+							
+							grid.insertAdjacentHTML('beforeend', temp.innerHTML);
+						}
+					} catch (e) {
+						console.error('Infinite scroll failed', e);
+					} finally {
+						isLoading = false;
+						if (spinner) spinner.classList.add('opacity-0');
+					}
+				}
+			}, { rootMargin: '400px' });
+			observer.observe(trigger);
+		}
+	</script>
 </Layout>
