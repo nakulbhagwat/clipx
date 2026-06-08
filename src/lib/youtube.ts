@@ -194,3 +194,32 @@ export async function getTrendingShortsPage(regionCode = 'IN', maxResults = 15, 
     nextPageToken
   };
 }
+
+export async function searchVideosPage(query: string, maxResults = 24, pageToken = '') {
+  if (!YOUTUBE_API_KEY) throw new Error('YouTube API Key is missing');
+
+  const pageTokenParam = pageToken ? `&pageToken=${pageToken}` : '';
+  const url = `${BASE_URL}/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=${maxResults}&key=${YOUTUBE_API_KEY}${pageTokenParam}`;
+  
+  const response = await fetch(url);
+  if (!response.ok) {
+    console.error('YouTube API Error:', await response.text());
+    return { videos: [], nextPageToken: null };
+  }
+
+  const data = await response.json();
+  const nextPageToken = data.nextPageToken || null;
+  
+  const videoIds = data.items.map((item: any) => item.id.videoId).join(',');
+  if (!videoIds) return { videos: [], nextPageToken };
+
+  const detailsUrl = `${BASE_URL}/videos?part=snippet,contentDetails,statistics&id=${videoIds}&key=${YOUTUBE_API_KEY}`;
+  const detailsResponse = await fetch(detailsUrl);
+  if (!detailsResponse.ok) return { videos: [], nextPageToken };
+
+  const detailsData = await detailsResponse.json();
+  return {
+    videos: detailsData.items.map(mapVideoDetails),
+    nextPageToken
+  };
+}
