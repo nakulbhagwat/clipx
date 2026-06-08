@@ -31,6 +31,7 @@ export async function searchRedtube(query: string, pageToken = '1') {
         return {
           id: `redtube-${rawId}`,
           originalHref: link,
+          sourceUrl: `https://www.redtube.com${link}`,
           thumbnail: image,
           title: title,
           duration: durationText || "",

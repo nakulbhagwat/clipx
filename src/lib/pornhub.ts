@@ -45,6 +45,7 @@ export async function searchPornhub(query: string, pageToken = '1') {
         return {
           id: `ph-${id}`,
           originalHref: link,
+          sourceUrl: `https://www.pornhub.com${link}`,
           thumbnail: image,
           title: title,
           duration: duration,

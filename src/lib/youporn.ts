@@ -31,6 +31,7 @@ export async function searchYouporn(query: string, pageToken = '1') {
       return {
         id: `yp-${rawId}`,
         originalHref: link,
+        sourceUrl: `https://www.youporn.com${link}`,
         thumbnail: image,
         title: title || "Unknown Title",
         duration: duration || "",

@@ -25,15 +25,16 @@ export async function searchXnxx(query: string, pageToken = '0') {
     let searchResults = $("div.mozaique > div")
       .map((i, el) => {
         const href = $(el).find("a").attr("href") || "";
-        const rawId = href.split('/').filter(Boolean)[0] || ""; // Usually something like "video-12345/..."
+        const videoId = $(el).find("img").attr("data-videoid") || "";
         const titleText = $(el).find("div.thumb-under").text().split("\n").map(el => el.trim()).filter(el => el !== "");
         const title = titleText[0] || "Unknown Title";
         const duration = titleText[2] || "";
         const image = $(el).find("img").attr("data-src") || "";
 
         return {
-          id: `xnxx-${rawId}`,
+          id: `xnxx-${videoId}`,
           originalHref: href,
+          sourceUrl: `${BASE_URL}${href}`,
           thumbnail: image,
           title: title,
           duration: duration,

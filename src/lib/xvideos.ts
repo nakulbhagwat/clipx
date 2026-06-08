@@ -36,6 +36,7 @@ export async function searchXvideos(query: string, pageToken = '0') {
         return {
           id: `xv-${rawId}`, // Added xv- prefix
           originalHref: href,
+          sourceUrl: `https://www.xvideos.com${href}`,
           thumbnail: image.replace('THUMBNUM', '1'), // Fallback if THUMBNUM isn't replaced
           title: data[i]?.title || "Unknown Title",
           duration: data[i]?.duration || "",

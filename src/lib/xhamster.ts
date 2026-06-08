@@ -29,6 +29,7 @@ export async function searchXhamster(query: string, pageToken = '1') {
         return {
           id: `xhamster-${rawId}`,
           originalHref: link,
+          sourceUrl: link,
           thumbnail: $(el).find("img").attr("src") || "",
           title: $(el).find("img").attr("alt") || "Unknown Title",
           duration: durationList[i] || "",
