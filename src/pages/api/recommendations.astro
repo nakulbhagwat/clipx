@@ -1,6 +1,6 @@
 ---
 export const partial = true;
-import { getRelatedVideos } from '../../lib/youtube';
+import { getMixedFeed } from '../../lib/scrapers';
 
 const videoId = Astro.url.searchParams.get('v');
 const pageToken = Astro.url.searchParams.get('pageToken');
@@ -9,7 +9,9 @@ if (!videoId || !pageToken) {
   return new Response(null, { status: 400 });
 }
 
-const { videos, nextPageToken } = await getRelatedVideos(videoId, 12, pageToken);
+const topics = ['adult webseries 18+ hot', 'bold webseries hot scenes', 'steamy romantic hot scenes', 'intimate kissing scenes'];
+const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+const { videos, nextPageToken } = await getMixedFeed(randomTopic, pageToken);
 ---
 
 {videos.map((rec: any) => (

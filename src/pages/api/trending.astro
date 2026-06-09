@@ -1,26 +1,16 @@
 ---
 export const partial = true;
-import { getTrendingVideos, getRelatedVideos } from '../../lib/youtube';
+import { getMixedFeed } from '../../lib/scrapers';
 
 const pageToken = Astro.url.searchParams.get('pageToken');
-const seed = Astro.url.searchParams.get('seed');
 
 if (!pageToken) {
   return new Response(null, { status: 400 });
 }
 
-let videos = [];
-let nextPageToken = null;
-
-if (seed) {
-  const result = await getRelatedVideos(seed, 24, pageToken);
-  videos = result.videos;
-  nextPageToken = result.nextPageToken;
-} else {
-  const result = await getTrendingVideos('IN', 24, pageToken);
-  videos = result.videos;
-  nextPageToken = result.nextPageToken;
-}
+const topics = ['trending adult', 'most popular hot', 'viral webseries 18+'];
+const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+const { videos, nextPageToken } = await getMixedFeed(randomTopic, pageToken);
 
 const standardVideos = videos.filter((v: any) => !v.isShort);
 ---
